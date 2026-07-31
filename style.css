@@ -488,23 +488,23 @@ body {
 }
 
 .reward-card {
-  position: relative;
-  background: linear-gradient(
-    135deg,
-    rgba(60, 36, 28, 0.75) 0%,
-    rgba(30, 16, 10, 0.95) 100%
-  );
-  border: 1px solid rgba(229, 193, 88, 0.4);
-  border-radius: 20px;
-  padding: 16px 20px;
-  margin-bottom: 24px;
-  overflow: hidden;
-  text-align: center;
-  box-shadow:
-    0 10px 30px rgba(0, 0, 0, 0.4),
-    inset 0 1px 1px rgba(255, 255, 255, 0.15),
-    0 0 20px rgba(229, 193, 88, 0.12);
-  will-change: transform, box-shadow;
+    position: relative;
+    background: linear-gradient(135deg, rgba(60, 36, 28, 0.75) 0%, rgba(30, 16, 10, 0.95) 100%);
+    border: 1px solid rgba(229, 193, 88, 0.4);
+    border-radius: 20px;
+    padding: 16px 20px;
+    margin-bottom: 24px;
+    overflow: hidden;
+    text-align: center;
+
+    box-shadow:
+        inset 0 1px 0 rgba(255, 244, 210, 0.18),   /* warm top highlight */
+        inset 0 -2px 0 rgba(94, 56, 26, 0.45),     /* dark caramel bottom edge */
+        0 8px 18px rgba(58, 32, 16, 0.32),         /* warm depth */
+        0 14px 36px rgba(25, 14, 8, 0.28),         /* soft ambient shadow */
+        0 0 18px #e5c15829;         /* subtle golden glow */
+
+    will-change: transform, box-shadow;
 }
 
 .reward-card-glow {
@@ -598,9 +598,14 @@ body {
 }
 
 .btn-yes {
-  background: linear-gradient(135deg, #d4af37 0%, #b38f2a 100%);
-  color: #0f0906;
-  box-shadow: 0 8px 24px rgba(212, 175, 55, 0.3);
+background: linear-gradient(135deg, #d4af37 0%, #b38f2a 100%);
+color: #0f0906;
+
+box-shadow:
+  inset 0 -3px 0 rgba(122, 91, 16, 0.45),      /* darker gold bottom */
+  inset 0 1px 0 rgba(255, 248, 220, 0.65),     /* warm top highlight */
+  0 3px 8px rgba(180, 143, 42, 0.35),          /* golden glow */
+  0 4px 10px rgba(75, 55, 12, 0.22);           /* warm depth */
 }
 
 .btn-yes:hover {
@@ -609,9 +614,15 @@ body {
 }
 
 .btn-no {
-  background: rgba(255, 255, 255, 0.05);
-  color: rgba(250, 250, 250, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+background: rgba(255, 255, 255, 0.05);
+color: rgba(250, 250, 250, 0.7);
+border: 1px solid rgba(255, 255, 255, 0.15);
+
+box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.18),
+    inset 0 -1px 1px rgba(255, 255, 255, 0.04),
+    0 8px 24px rgba(0, 0, 0, 0.28),
+    0 0 20px rgba(255, 255, 255, 0.03);
 }
 
 .btn-no:hover {
