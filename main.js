@@ -45,6 +45,36 @@ document.addEventListener("DOMContentLoaded", () => {
   // QR Scanner Elements
   const qrScannerContainer = document.getElementById("qrScannerContainer");
   const qrFeedback = document.getElementById("qrFeedback");
+  const skipQrBtn = document.getElementById("skipQrBtn");
+
+  // Helper to transition out of QR scanner
+  function dismissQrScanner() {
+    if (html5QrcodeScanner) {
+      html5QrcodeScanner
+        .stop()
+        .then(() => {
+          gsap.to(qrScannerContainer, {
+            opacity: 0,
+            duration: 0.6,
+            onComplete: () => {
+              qrScannerContainer.style.display = "none";
+              startSilentIntroVideo();
+            },
+          });
+        })
+        .catch(() => {
+          qrScannerContainer.style.display = "none";
+          startSilentIntroVideo();
+        });
+    } else {
+      qrScannerContainer.style.display = "none";
+      startSilentIntroVideo();
+    }
+  }
+
+  if (skipQrBtn) {
+    skipQrBtn.addEventListener("click", dismissQrScanner);
+  }
 
   // State to track if the title popping animation has already run
   let titleAnimationHasRun = false;
@@ -64,28 +94,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         // Stop scanner camera immediately
-        if (html5QrcodeScanner) {
-          html5QrcodeScanner
-            .stop()
-            .then(() => {
-              // Fade out QR container and reveal video
-              gsap.to(qrScannerContainer, {
-                opacity: 0,
-                duration: 0.6,
-                onComplete: () => {
-                  qrScannerContainer.style.display = "none";
-                  startSilentIntroVideo();
-                },
-              });
-            })
-            .catch(() => {
-              qrScannerContainer.style.display = "none";
-              startSilentIntroVideo();
-            });
-        } else {
-          qrScannerContainer.style.display = "none";
-          startSilentIntroVideo();
-        }
+        dismissQrScanner();
       } else {
         if (qrFeedback) {
           qrFeedback.style.color = "#f44336";
@@ -387,30 +396,20 @@ document.addEventListener("DOMContentLoaded", () => {
       },
     });
 
-    // 2. Prepare video container overlay and make it visible again
+    // 2. Prepare video container overlay, switch to video-end.mp4 and play forward
+    introVideo.src = "assets/video-end.mp4";
+    introVideo.currentTime = 0;
     videoContainer.style.display = "block";
     videoContainer.dataset.transitioned = ""; // Reset transitioned flag
-    introVideo.currentTime = introVideo.duration || 5; // Start at the end
 
     gsap.to(videoContainer, {
       opacity: 1,
       duration: 0.6,
       ease: "power2.out",
       onComplete: () => {
-        // 3. Simulating Reverse Video Playback via high frequency interval loop
-        const fps = 30;
-        const intervalTime = 1000 / fps;
-        const step = 1 / fps; // how many seconds to step back per frame
-
-        const reversePlayInterval = setInterval(() => {
-          if (introVideo.currentTime > 0.1) {
-            introVideo.currentTime = Math.max(0, introVideo.currentTime - step);
-          } else {
-            clearInterval(reversePlayInterval);
-            introVideo.currentTime = 0;
-            // Kept fully visible at the first frame (time 0) as requested, no reveal
-          }
-        }, intervalTime);
+        introVideo.play().catch((err) => {
+          console.warn("Video end play interrupted or blocked:", err);
+        });
       },
     });
   }
