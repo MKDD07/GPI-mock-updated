@@ -1,0 +1,974 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: "Outfit", "Poppins", sans-serif;
+  background-color: #0f0906;
+  color: #fafafa;
+}
+
+/* Fullscreen QR Code Scanner Container */
+.qr-scanner-container {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 10000;
+  background: radial-gradient(circle at 50% 40%, #2c1a12 0%, #0c0704 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.qr-scanner-card {
+  width: 100%;
+  max-width: 400px;
+  background: rgba(36, 22, 16, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  border-radius: 28px;
+  padding: 28px;
+  text-align: center;
+  box-shadow:
+    0 20px 50px rgba(0, 0, 0, 0.8),
+    0 0 30px rgba(212, 175, 55, 0.15);
+}
+
+.qr-title {
+  font-family: "Outfit", sans-serif;
+  font-size: 24px;
+  font-weight: 500;
+  color: #e5c158;
+  margin-bottom: 8px;
+}
+
+.qr-subtitle {
+  font-family: "Poppins", sans-serif;
+  font-size: 12px;
+  color: rgba(250, 250, 250, 0.65);
+  line-height: 1.5;
+  margin-bottom: 20px;
+}
+
+.qr-reader-view {
+  width: 100%;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  background: #000;
+  aspect-ratio: 1;
+  margin-bottom: 16px;
+}
+
+.qr-reader-view video {
+  object-fit: cover !important;
+}
+
+.qr-feedback-hint {
+  font-family: "Poppins", sans-serif;
+  font-size: 11px;
+  color: rgba(250, 250, 250, 0.5);
+}
+
+/* Fullscreen Silent Video Overlay */
+.video-container {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 9999;
+  background: #000000;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.video-container video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Main Screen Background */
+.main-screen {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: radial-gradient(
+    circle at 50% 40%,
+    #2c1a12 0%,
+    #180e09 60%,
+    #0c0704 100%
+  );
+  overflow: hidden;
+  transition: filter 0.4s ease;
+}
+
+/* Top Right Info Button */
+.info-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 10;
+  width: 44px;
+  height: 44px;
+  color: #d4af37;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+}
+
+.info-btn:hover {
+  transform: scale(1.1);
+  border-color: #d4af37;
+}
+
+.info-btn:active {
+  transform: scale(0.95);
+}
+
+/* Matter.js Physics Canvas Container */
+.matter-container {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: auto;
+  z-index: 2;
+}
+
+.matter-container canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
+
+/* Canvas Particle Effect Layer */
+.particle-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Premium Dark Chocolate Glassmorphism Popup */
+.popup-card {
+  position: absolute;
+  z-index: 3;
+  width: calc(100% - 48px);
+  max-width: 380px;
+  background: rgba(36, 22, 16, 0.75);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(212, 175, 55, 0.25);
+  border-radius: 32px;
+  padding: 36px 28px;
+  text-align: center;
+  box-shadow:
+    0 30px 60px rgba(0, 0, 0, 0.7),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 0 40px rgba(212, 175, 55, 0.12);
+  transform: scale(0) translateY(40px);
+  opacity: 0;
+  overflow: hidden;
+}
+
+/* Styling specifically for panel card layout overrides */
+.redemption-card-panel {
+  text-align: left;
+}
+
+/* Success Card Specific Elements */
+.success-card-panel {
+  display: none;
+}
+
+.retail-outlet-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  border-radius: 16px;
+  padding: 12px;
+  margin-bottom: 16px;
+}
+
+.outlet-label {
+  font-family: "Poppins", sans-serif;
+  font-size: 10px;
+  text-transform: uppercase;
+  color: #d4af37;
+  letter-spacing: 0.1em;
+  display: block;
+  margin-bottom: 2px;
+}
+
+.outlet-name {
+  font-family: "Outfit", sans-serif;
+  font-size: 18px;
+  font-weight: 500;
+  color: #ffffff;
+}
+
+.claim-message-text {
+  font-family: "Poppins", sans-serif;
+  font-size: 12px;
+  color: rgba(250, 250, 250, 0.7);
+  line-height: 1.5;
+  margin-bottom: 20px;
+}
+
+.unique-code-section {
+  background: #180e09;
+  border: 1px dashed rgba(212, 175, 55, 0.4);
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 22px;
+  text-align: center;
+}
+
+.code-title {
+  font-family: "Poppins", sans-serif;
+  font-size: 10px;
+  text-transform: uppercase;
+  color: rgba(250, 250, 250, 0.5);
+  letter-spacing: 0.08em;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.code-display-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.code-text {
+  font-family: "Outfit", sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: #d4af37;
+  letter-spacing: 0.05em;
+}
+
+.copy-code-btn {
+  background: transparent;
+  border: none;
+  color: rgba(250, 250, 250, 0.6);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    color 0.2s,
+    transform 0.2s;
+}
+
+.copy-code-btn:hover {
+  color: #d4af37;
+  transform: scale(1.15);
+}
+
+.copy-code-btn:active {
+  transform: scale(0.9);
+}
+
+.code-instruction-text {
+  font-family: "Poppins", sans-serif;
+  font-size: 10px;
+  color: rgba(250, 250, 250, 0.55);
+  margin-top: 8px;
+}
+
+/* Retailer Card Specific Elements */
+.retailer-header {
+  margin-bottom: 24px;
+}
+
+.retailer-gift-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: rgba(212, 175, 55, 0.15);
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  color: #d4af37;
+  font-size: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+}
+
+.retailer-header h2 {
+  font-family: "Outfit", sans-serif;
+  font-weight: 500;
+  font-size: 24px;
+  color: #ffffff;
+  margin-bottom: 8px;
+}
+
+.retailer-header p {
+  font-family: "Poppins", sans-serif;
+  font-weight: 300;
+  font-size: 13px;
+  color: rgba(250, 250, 250, 0.65);
+  line-height: 1.6;
+}
+
+.card-shimmer {
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    45deg,
+    transparent 45%,
+    rgba(212, 175, 55, 0.08) 50%,
+    transparent 55%
+  );
+  transform: rotate(25deg);
+  pointer-events: none;
+  animation: shimmerMove 8s infinite linear;
+}
+
+@keyframes shimmerMove {
+  0% {
+    transform: translateX(-100%) rotate(25deg);
+  }
+  100% {
+    transform: translateX(100%) rotate(25deg);
+  }
+}
+
+.toffee-icon-wrap {
+  position: relative;
+  width: 160px;
+  height: 160px;
+  margin: 0 auto 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.toffee-img {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.6));
+}
+
+.toffee-fallback {
+  position: relative;
+  z-index: 2;
+  font-size: 54px;
+}
+
+.popup-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  color: #d4af37;
+  text-transform: uppercase;
+  background: rgba(212, 175, 55, 0.12);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  padding: 5px 14px;
+  border-radius: 99px;
+  margin-bottom: 14px;
+}
+
+.popup-title {
+  font-family: "Outfit", sans-serif;
+  font-weight: 400;
+  font-size: 32px;
+  color: #e5c158;
+  text-shadow: 0 4px 12px rgba(229, 193, 88, 0.2);
+  letter-spacing: -0.01em;
+  margin-bottom: 12px;
+  display: inline-block;
+  transform-origin: center center;
+  will-change: transform, opacity;
+}
+
+.popup-subtitle {
+  font-family: "Poppins", sans-serif;
+  font-weight: 300;
+  font-size: 13px;
+  color: rgba(250, 250, 250, 0.65);
+  line-height: 1.6;
+  margin-bottom: 22px;
+}
+
+.reward-card {
+  position: relative;
+  background: linear-gradient(
+    135deg,
+    rgba(78, 52, 46, 0.6) 0%,
+    rgba(45, 27, 20, 0.8) 100%
+  );
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  border-radius: 20px;
+  padding: 14px 18px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+}
+
+.reward-sparkle {
+  font-size: 20px;
+}
+
+.reward-text {
+  font-family: "Poppins", sans-serif;
+  font-weight: 300;
+  font-size: 12px;
+  color: rgba(250, 250, 250, 0.85);
+  line-height: 1.4;
+}
+
+.reward-text strong {
+  font-family: "Outfit", sans-serif;
+  font-weight: 600;
+  color: #d4af37;
+  font-size: 14px;
+}
+
+.question-box {
+  margin-top: 8px;
+  margin-bottom: 16px;
+}
+
+.question-text {
+  font-family: "Poppins", sans-serif;
+  font-weight: 300;
+  font-size: 14px;
+  color: rgba(250, 250, 250, 0.9);
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.button-group {
+  display: flex;
+  gap: 12px;
+}
+
+.btn-option {
+  flex: 1;
+  padding: 14px 18px;
+  border-radius: 99px;
+  border: none;
+  font-family: "Outfit", sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition:
+    transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.btn-yes {
+  background: linear-gradient(135deg, #d4af37 0%, #b38f2a 100%);
+  color: #0f0906;
+  box-shadow: 0 8px 24px rgba(212, 175, 55, 0.3);
+}
+
+.btn-yes:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(212, 175, 55, 0.45);
+}
+
+.btn-no {
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(250, 250, 250, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.btn-no:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.btn-option:active {
+  transform: scale(0.95) !important;
+}
+
+/* =========================================================
+   HAPPY CODE REDEMPTION PANEL OVERLAY CARD
+   ========================================================= */
+.close-drawer-btn {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  color: rgba(250, 250, 250, 0.7);
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    color 0.2s;
+}
+
+.close-drawer-btn:hover {
+  background: rgba(212, 175, 55, 0.2);
+  color: #d4af37;
+}
+
+.drawer-header {
+  margin-bottom: 20px;
+}
+
+.drawer-header h2 {
+  font-family: "Outfit", sans-serif;
+  font-weight: 500;
+  font-size: 22px;
+  color: #ffffff;
+  margin-bottom: 4px;
+}
+
+.drawer-header p {
+  font-family: "Poppins", sans-serif;
+  font-weight: 300;
+  font-size: 12px;
+  color: rgba(250, 250, 250, 0.6);
+  line-height: 1.4;
+}
+
+.redemption-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group label {
+  font-family: "Poppins", sans-serif;
+  font-weight: 400;
+  font-size: 12px;
+  color: rgba(250, 250, 250, 0.85);
+}
+
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-icon {
+  position: absolute;
+  left: 14px;
+  color: #d4af37;
+  font-size: 14px;
+}
+
+.input-wrapper input {
+  width: 100%;
+  padding: 12px 14px 12px 38px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  color: #ffffff;
+  font-family: "Poppins", sans-serif;
+  font-size: 13px;
+  outline: none;
+  transition:
+    border-color 0.25s,
+    background 0.25s;
+}
+
+.input-wrapper input:focus {
+  border-color: #d4af37;
+  background: rgba(212, 175, 55, 0.06);
+}
+
+/* Happy Code Box Matrix */
+.happy-code-container {
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.code-box {
+  width: 48px;
+  height: 50px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #d4af37;
+  font-family: "Outfit", sans-serif;
+  font-weight: 600;
+  font-size: 20px;
+  text-align: center;
+  outline: none;
+  transition:
+    border-color 0.25s,
+    background 0.25s,
+    transform 0.2s;
+}
+
+.code-box:focus {
+  border-color: #d4af37;
+  background: rgba(212, 175, 55, 0.08);
+  transform: scale(1.04);
+}
+
+/* Custom Checkbox Styling */
+.checkbox-group {
+  display: flex;
+  align-items: flex-start;
+}
+
+.custom-checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+  font-family: "Poppins", sans-serif;
+  font-size: 10px;
+  line-height: 1.4;
+  color: rgba(250, 250, 250, 0.7);
+}
+
+.custom-checkbox input {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+}
+
+.checkmark {
+  position: relative;
+  top: 1px;
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  flex-shrink: 0;
+  transition:
+    background 0.2s,
+    border-color 0.2s;
+}
+
+.custom-checkbox:hover input ~ .checkmark {
+  border-color: #d4af37;
+}
+
+.custom-checkbox input:checked ~ .checkmark {
+  background: #d4af37;
+  border-color: #d4af37;
+}
+
+.checkmark::after {
+  content: "";
+  position: absolute;
+  display: none;
+  left: 5px;
+  top: 2px;
+  width: 4px;
+  height: 8px;
+  border: solid #0f0906;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.custom-checkbox input:checked ~ .checkmark::after {
+  display: block;
+}
+
+.checkbox-label a {
+  color: #d4af37;
+  text-decoration: underline;
+}
+
+.submit-redemption-btn {
+  width: 100%;
+  margin-top: 4px;
+}
+
+/* Respect Prefers Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  .popup-card,
+  .btn-option,
+  .code-box {
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* Steps Modal Styling */
+.steps-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 0.35s ease,
+    visibility 0.35s ease;
+}
+
+.steps-modal.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+.steps-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(12, 7, 4, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.steps-modal-card {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 400px;
+  background: #241610;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  border-radius: 28px;
+  padding: 32px 24px;
+  box-shadow:
+    0 30px 60px rgba(0, 0, 0, 0.8),
+    0 0 30px rgba(212, 175, 55, 0.15);
+  transform: scale(0.85);
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.steps-modal.show .steps-modal-card {
+  transform: scale(1);
+}
+
+.close-steps-btn {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  color: rgba(250, 250, 250, 0.7);
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    color 0.2s;
+}
+
+.close-steps-btn:hover {
+  background: rgba(212, 175, 55, 0.2);
+  color: #d4af37;
+}
+
+.steps-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.steps-header-icon {
+  font-size: 32px;
+  color: #d4af37;
+  margin-bottom: 10px;
+}
+
+.steps-header h2 {
+  font-family: "Outfit", sans-serif;
+  font-weight: 500;
+  font-size: 22px;
+  color: #ffffff;
+  margin-bottom: 4px;
+}
+
+.steps-header p {
+  font-family: "Poppins", sans-serif;
+  font-weight: 300;
+  font-size: 13px;
+  color: rgba(250, 250, 250, 0.6);
+}
+
+.steps-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.step-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 14px;
+}
+
+.step-number {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #d4af37;
+  color: #0f0906;
+  font-family: "Outfit", sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.step-content h3 {
+  font-family: "Outfit", sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  color: #ffffff;
+  margin-bottom: 2px;
+}
+
+.step-content p {
+  font-family: "Poppins", sans-serif;
+  font-weight: 300;
+  font-size: 12px;
+  color: rgba(250, 250, 250, 0.65);
+  line-height: 1.4;
+}
+
+.modal-got-it-btn {
+  width: 100%;
+}
+
+/* Warning Modal/Card Layout Specifics */
+.warning-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+h2 {
+  font-weight: 400;
+}
+
+.warning-icon-wrap {
+  width: 72px;
+  height: 72px;
+  font-size: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+}
+
+.warning-face-icon {
+  font-size: 32px;
+  color: #d4af37;
+}
+
+.warning-large-text {
+  font-family: "Outfit", sans-serif;
+  font-size: 18px;
+  font-weight: 400;
+  color: #ffffff;
+  line-height: 1.5;
+  margin-top: 12px;
+  margin-bottom: 20px;
+}
+
+/* Redemption Metadata details */
+.redemption-meta-box {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 16px;
+  text-align: left;
+}
+
+.meta-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  font-family: "Poppins", sans-serif;
+  font-size: 12px;
+}
+
+.meta-row:last-child {
+  border-bottom: none;
+}
+
+.meta-label {
+  color: rgba(250, 250, 250, 0.5);
+}
+
+.meta-val {
+  color: #ffffff;
+  font-weight: 500;
+  font-family: "Outfit", sans-serif;
+}
+
+.highlight-val {
+  color: #ffb74d;
+}
+
+.frequency-limit-hint {
+  font-family: "Poppins", sans-serif;
+  font-size: 11px;
+  color: rgba(250, 250, 250, 0.45);
+  line-height: 1.4;
+  margin-bottom: 10px;
+}
