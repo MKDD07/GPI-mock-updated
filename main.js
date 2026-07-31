@@ -189,25 +189,115 @@ document.addEventListener("DOMContentLoaded", () => {
         initMatterPhysicsToffees();
         fireGoldenConfetti();
         animateTitlePop();
+        animateRewardCard();
       },
     });
   }
 
-  /* ---------- POPPING TITLE GSAP ANIMATION ---------- */
+  /* ---------- PREMIUM REWARD CARD GSAP ANIMATION ---------- */
+  function animateRewardCard() {
+    const rewardCard = document.querySelector(".reward-card");
+    const rewardGlow = document.querySelector(".reward-card-glow");
+    const rewardTag = document.querySelector(".reward-tag");
+    const rewardHighlight = document.querySelector(".reward-highlight");
+
+    if (!rewardCard) return;
+
+    // Entrance pop animation
+    gsap.fromTo(
+      rewardCard,
+      { scale: 0.85, opacity: 0, y: 15 },
+      {
+        scale: 1,
+        opacity: 1,
+        y: 0,
+        duration: 0.9,
+        delay: 0.6,
+        ease: "back.out(1.7)",
+      }
+    );
+
+    // Staggered tag & highlight text pop
+    if (rewardTag && rewardHighlight) {
+      gsap.fromTo(
+        [rewardTag, rewardHighlight],
+        { opacity: 0, y: 8 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.6,
+          delay: 0.9,
+          stagger: 0.15,
+          ease: "power2.out",
+        }
+      );
+    }
+
+    // Continuous radial glow rotation sweep
+    if (rewardGlow) {
+      gsap.to(rewardGlow, {
+        rotation: 360,
+        duration: 12,
+        repeat: -1,
+        ease: "none",
+      });
+    }
+
+    // Subtle continuous pulse on the reward box border & scale
+    gsap.to(rewardCard, {
+      boxShadow:
+        "0 12px 35px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.25), 0 0 28px rgba(229, 193, 88, 0.35)",
+      borderColor: "rgba(255, 220, 110, 0.7)",
+      duration: 1.8,
+      repeat: -1,
+      yoyo: true,
+      ease: "sine.inOut",
+    });
+  }
+
+  /* ---------- POPPING SPLIT-TEXT TITLE GSAP ANIMATION ---------- */
   function animateTitlePop() {
-    if (!popupTitle || titleAnimationHasRun) return;
+    const titles = document.querySelectorAll(".popup-title");
+    if (!titles.length || titleAnimationHasRun) return;
     titleAnimationHasRun = true;
 
-    // Reset initial state for pop effect
-    gsap.set(popupTitle, { scale: 0.3, opacity: 0 });
+    titles.forEach((titleEl) => {
+      const text = titleEl.textContent.trim();
+      titleEl.innerHTML = "";
+      titleEl.style.display = "inline-block";
 
-    // Staggered sequence: pop up big with elastic bounce then settle down
-    gsap.to(popupTitle, {
-      scale: 1,
-      opacity: 1,
-      duration: 1.2,
-      delay: 0.4,
-      ease: "elastic.out(1.2, 0.4)",
+      const chars = text.split("");
+      chars.forEach((char) => {
+        const span = document.createElement("span");
+        span.className = "char-span";
+        span.style.display = "inline-block";
+        span.style.willChange = "transform, opacity";
+        if (char === " ") {
+          span.innerHTML = "&nbsp;";
+        } else {
+          span.textContent = char;
+        }
+        titleEl.appendChild(span);
+      });
+
+      const charSpans = titleEl.querySelectorAll(".char-span");
+      gsap.set(charSpans, {
+        opacity: 0,
+        scale: 0,
+        y: 25,
+        rotation: () => (Math.random() - 0.5) * 30,
+      });
+
+      gsap.to(charSpans, {
+        opacity: 1,
+        scale: 1,
+        y: 0,
+        rotation: 0,
+        duration: 0.8,
+        delay: 0.3,
+        stagger: 0.05,
+        ease: "back.out(2)",
+      });
     });
   }
 
@@ -373,7 +463,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   function openSuccessDrawer() {
-    // Generate randomized unique redemption code (e.g. LUV-XXXXX)
+    // Generate randomized unique redemption code (e.g. TOFFEE-XXXXX)
     if (uniqueCodeText) {
       const codeChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
       let codeStr = "";
@@ -382,10 +472,111 @@ document.addEventListener("DOMContentLoaded", () => {
           Math.floor(Math.random() * codeChars.length),
         );
       }
-      uniqueCodeText.textContent = `LUV-${codeStr}`;
+      uniqueCodeText.textContent = `TOFFEE-${codeStr}`;
     }
 
     switchCard(redemptionDrawer, successDrawer);
+    setTimeout(initScratchCardCanvas, 400);
+  }
+
+  /* ---------- INTERACTIVE CANVAS SCRATCH CARD ---------- */
+  function initScratchCardCanvas() {
+    const scratchCanvas = document.getElementById("scratchCanvas");
+    const scratchContainer = document.getElementById("scratchContainer");
+    if (!scratchCanvas || !scratchContainer) return;
+
+    const ctx = scratchCanvas.getContext("2d");
+    const rect = scratchContainer.getBoundingClientRect();
+    const width = rect.width || 280;
+    const height = rect.height || 64;
+
+    scratchCanvas.width = width;
+    scratchCanvas.height = height;
+
+    // Fill canvas with luxury gold metallic layer & pattern
+    const grad = ctx.createLinearGradient(0, 0, width, height);
+    grad.addColorStop(0, "#f7e096");
+    grad.addColorStop(0.3, "#d4af37");
+    grad.addColorStop(0.7, "#aa820a");
+    grad.addColorStop(1, "#f7e096");
+
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, width, height);
+
+    // Overlay Scratch Instruction Text on top layer
+    ctx.font = "bold 13px Outfit, sans-serif";
+    ctx.fillStyle = "#0f0906";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("✨ SCRATCH HERE TO REVEAL ✨", width / 2, height / 2);
+
+    let isDrawing = false;
+    let scratchedPixels = 0;
+
+    function getPointerPos(e) {
+      const cRect = scratchCanvas.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      return {
+        x: clientX - cRect.left,
+        y: clientY - cRect.top,
+      };
+    }
+
+    function scratch(e) {
+      if (!isDrawing) return;
+      e.preventDefault();
+      const pos = getPointerPos(e);
+
+      ctx.globalCompositeOperation = "destination-out";
+      ctx.beginPath();
+      ctx.arc(pos.x, pos.y, 18, 0, Math.PI * 2);
+      ctx.fill();
+
+      checkScratchPercentage();
+    }
+
+    function checkScratchPercentage() {
+      // Check every few scratches if >= 45% scratched, auto reveal remaining layer seamlessly
+      const imgData = ctx.getImageData(0, 0, width, height);
+      let clearCount = 0;
+      const totalPixels = imgData.data.length / 4;
+
+      for (let i = 3; i < imgData.data.length; i += 4 * 8) {
+        if (imgData.data[i] === 0) {
+          clearCount += 8;
+        }
+      }
+
+      if (clearCount / totalPixels > 0.35) {
+        gsap.to(scratchCanvas, {
+          opacity: 0,
+          duration: 0.5,
+          onComplete: () => {
+            scratchCanvas.style.display = "none";
+            fireGoldenConfetti();
+          },
+        });
+      }
+    }
+
+    scratchCanvas.addEventListener("mousedown", (e) => {
+      isDrawing = true;
+      scratch(e);
+    });
+    scratchCanvas.addEventListener("mousemove", scratch);
+    window.addEventListener("mouseup", () => {
+      isDrawing = false;
+    });
+
+    scratchCanvas.addEventListener("touchstart", (e) => {
+      isDrawing = true;
+      scratch(e);
+    });
+    scratchCanvas.addEventListener("touchmove", scratch);
+    window.addEventListener("touchend", () => {
+      isDrawing = false;
+    });
   }
 
   function closeSuccessDrawer() {
@@ -454,12 +645,30 @@ document.addEventListener("DOMContentLoaded", () => {
     successContinueBtn.addEventListener("click", closeSuccessDrawer);
   }
 
+  // Realtime Mobile Input Sanitization (only allow digits and max 10 chars)
+  if (mobileInput) {
+    mobileInput.addEventListener("input", (e) => {
+      mobileInput.value = mobileInput.value.replace(/\D/g, "").slice(0, 10);
+    });
+  }
+
   if (redemptionForm) {
     redemptionForm.addEventListener("submit", (e) => {
       e.preventDefault();
 
+      const mobileVal = mobileInput ? mobileInput.value.trim() : "";
+      const mobileRegex = /^[6-9]\d{9}$/;
+
+      if (!mobileRegex.test(mobileVal)) {
+        alert(
+          "Please enter a valid 10-digit mobile number starting with 6, 7, 8, or 9."
+        );
+        if (mobileInput) mobileInput.focus();
+        return;
+      }
+
       // Check for specific registered campaign mobile number validation
-      if (mobileInput && mobileInput.value.trim() === "7827232156") {
+      if (mobileVal === "7827232156") {
         openWarningModal();
         return;
       }
@@ -568,17 +777,25 @@ document.addEventListener("DOMContentLoaded", () => {
       particleCanvas.height = window.innerHeight;
     });
 
-    const total = 35;
+    const total = 55;
     for (let i = 0; i < total; i++) {
+      const type = Math.random();
       particles.push({
         x: Math.random() * particleCanvas.width,
         y: Math.random() * particleCanvas.height,
-        r: Math.random() * 2.5 + 1,
+        r: type > 0.85 ? Math.random() * 3.5 + 2 : Math.random() * 2 + 0.8,
         color:
-          Math.random() > 0.4 ? "rgba(212, 175, 55, " : "rgba(245, 230, 211, ",
-        alpha: Math.random() * 0.7 + 0.2,
-        speedY: -(Math.random() * 0.4 + 0.1),
-        speedX: (Math.random() - 0.5) * 0.3,
+          type > 0.6
+            ? "rgba(229, 193, 88, "
+            : type > 0.3
+            ? "rgba(255, 235, 175, "
+            : "rgba(139, 90, 43, ",
+        alpha: Math.random() * 0.75 + 0.25,
+        speedY: -(Math.random() * 0.5 + 0.15),
+        speedX: (Math.random() - 0.5) * 0.4,
+        pulseSpeed: Math.random() * 0.02 + 0.005,
+        pulseAngle: Math.random() * Math.PI * 2,
+        isGlow: type > 0.8,
       });
     }
     renderParticles();
@@ -590,14 +807,27 @@ document.addEventListener("DOMContentLoaded", () => {
     particles.forEach((p) => {
       p.y += p.speedY;
       p.x += p.speedX;
-      if (p.y < 0) p.y = particleCanvas.height;
-      if (p.x < 0) p.x = particleCanvas.width;
-      if (p.x > particleCanvas.width) p.x = 0;
+      p.pulseAngle += p.pulseSpeed;
 
+      if (p.y < -10) p.y = particleCanvas.height + 10;
+      if (p.x < -10) p.x = particleCanvas.width + 10;
+      if (p.x > particleCanvas.width + 10) p.x = -10;
+
+      const currentAlpha = p.alpha + Math.sin(p.pulseAngle) * 0.15;
+      const clampedAlpha = Math.max(0.1, Math.min(1, currentAlpha));
+
+      ctx.save();
       ctx.beginPath();
       ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-      ctx.fillStyle = p.color + p.alpha + ")";
+
+      if (p.isGlow) {
+        ctx.shadowBlur = 12;
+        ctx.shadowColor = "rgba(229, 193, 88, 0.8)";
+      }
+
+      ctx.fillStyle = p.color + clampedAlpha + ")";
       ctx.fill();
+      ctx.restore();
     });
     requestAnimationFrame(renderParticles);
   }
