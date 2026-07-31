@@ -49,26 +49,29 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Helper to transition out of QR scanner
   function dismissQrScanner() {
-    if (html5QrcodeScanner) {
+    const doTransition = () => {
+      gsap.to(qrScannerContainer, {
+        opacity: 0,
+        duration: 0.6,
+        onComplete: () => {
+          qrScannerContainer.style.display = "none";
+          startSilentIntroVideo();
+        },
+      });
+    };
+
+    if (html5QrcodeScanner && html5QrcodeScanner.isScanning) {
       html5QrcodeScanner
         .stop()
         .then(() => {
-          gsap.to(qrScannerContainer, {
-            opacity: 0,
-            duration: 0.6,
-            onComplete: () => {
-              qrScannerContainer.style.display = "none";
-              startSilentIntroVideo();
-            },
-          });
+          doTransition();
         })
         .catch(() => {
           qrScannerContainer.style.display = "none";
           startSilentIntroVideo();
         });
     } else {
-      qrScannerContainer.style.display = "none";
-      startSilentIntroVideo();
+      doTransition();
     }
   }
 
@@ -131,14 +134,21 @@ document.addEventListener("DOMContentLoaded", () => {
   function startSilentIntroVideo() {
     if (!videoContainer || !introVideo) return;
 
+    introVideo.src = "assets/video-initial.mp4";
     videoContainer.style.display = "block";
-    gsap.set(videoContainer, { opacity: 1 });
+    gsap.fromTo(
+      videoContainer,
+      { opacity: 0 },
+      { opacity: 1, duration: 1.2, ease: "power2.inOut" }
+    );
 
     introVideo.muted = true;
     introVideo.controls = false;
     introVideo.currentTime = 0;
     introVideo.play().catch(() => {});
 
+    // Remove any leftover end video listeners
+    introVideo.onended = null;
     introVideo.addEventListener("ended", triggerSeamlessTransition);
     setTimeout(() => {
       if (
@@ -155,10 +165,10 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!videoContainer || videoContainer.dataset.transitioned) return;
     videoContainer.dataset.transitioned = "true";
 
-    // Fade out video smoothly
+    // Fade out video smoothly with ease in/out
     gsap.to(videoContainer, {
       opacity: 0,
-      duration: 1,
+      duration: 1.2,
       ease: "power2.inOut",
       onComplete: () => {
         videoContainer.style.display = "none";
@@ -399,19 +409,26 @@ document.addEventListener("DOMContentLoaded", () => {
     // 2. Prepare video container overlay, switch to video-end.mp4 and play forward
     introVideo.src = "assets/video-end.mp4";
     introVideo.currentTime = 0;
+    introVideo.onended = () => {
+      introVideo.pause(); // Ensure video stays paused on the last frame
+    };
     videoContainer.style.display = "block";
-    videoContainer.dataset.transitioned = ""; // Reset transitioned flag
+    videoContainer.dataset.transitioned = "end_video"; // Prevent auto-transition timer
 
-    gsap.to(videoContainer, {
-      opacity: 1,
-      duration: 0.6,
-      ease: "power2.out",
-      onComplete: () => {
-        introVideo.play().catch((err) => {
-          console.warn("Video end play interrupted or blocked:", err);
-        });
-      },
-    });
+    gsap.fromTo(
+      videoContainer,
+      { opacity: 0 },
+      {
+        opacity: 1,
+        duration: 1.2,
+        ease: "power2.inOut",
+        onComplete: () => {
+          introVideo.play().catch((err) => {
+            console.warn("Video end play interrupted or blocked:", err);
+          });
+        },
+      }
+    );
   }
 
   // Copy code clipboard helper
@@ -634,4 +651,94 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
   });
+
+  /* ---------- 8. FLOATING DEV TEST NAVIGATION TOOLBAR ---------- */
+  const devTestToolbar = document.getElementById("devTestToolbar");
+  const devToolToggle = document.getElementById("devToolToggle");
+  const devToolButtons = document.getElementById("devToolButtons");
+
+  if (devToolToggle && devTestToolbar) {
+    devToolToggle.addEventListener("click", () => {
+      devTestToolbar.classList.toggle("active");
+    });
+  }
+
+  function hideAllSections() {
+    if (html5QrcodeScanner && html5QrcodeScanner.isScanning) {
+      html5QrcodeScanner.stop().catch(() => {});
+    }
+    // Hide panels
+    const panels = [
+      qrScannerContainer,
+      videoContainer,
+      popup,
+      retailerDrawer,
+      redemptionDrawer,
+      successDrawer,
+      participatedModal,
+    ];
+    panels.forEach((p) => {
+      if (p) {
+        p.style.display = "none";
+        p.style.opacity = "1";
+        gsap.set(p, { opacity: 1, scale: 1, y: 0 });
+      }
+    });
+    closeStepsModal();
+    if (introVideo) introVideo.pause();
+  }
+
+  if (devToolButtons) {
+    devToolButtons.addEventListener("click", (e) => {
+      const btn = e.target.closest("button");
+      if (!btn) return;
+      const section = btn.dataset.section;
+      hideAllSections();
+
+      switch (section) {
+        case "qr":
+          if (qrScannerContainer) {
+            qrScannerContainer.style.display = "flex";
+            qrScannerContainer.style.opacity = "1";
+          }
+          break;
+        case "video":
+          if (videoContainer && introVideo) {
+            introVideo.src = "assets/video-initial.mp4";
+            introVideo.currentTime = 0;
+            videoContainer.style.display = "block";
+            videoContainer.dataset.transitioned = "";
+            introVideo.play().catch(() => {});
+          }
+          break;
+        case "popup":
+          if (popup) popup.style.display = "block";
+          break;
+        case "retailer":
+          if (retailerDrawer) retailerDrawer.style.display = "block";
+          break;
+        case "redemption":
+          if (redemptionDrawer) redemptionDrawer.style.display = "block";
+          break;
+        case "success":
+          if (successDrawer) successDrawer.style.display = "block";
+          break;
+        case "video-end":
+          if (videoContainer && introVideo) {
+            introVideo.src = "assets/video-end.mp4";
+            introVideo.currentTime = 0;
+            videoContainer.style.display = "block";
+            videoContainer.dataset.transitioned = "";
+            introVideo.play().catch(() => {});
+          }
+          break;
+        case "participated":
+          if (participatedModal) participatedModal.style.display = "block";
+          break;
+        case "steps":
+          openStepsModal();
+          break;
+      }
+    });
+  }
 });
