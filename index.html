@@ -6,10 +6,10 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     />
-    <title>Ombre — Premium Dark Chocolate</title>
+    <title>Choco Toffee — Signature Experience</title>
     <meta
       name="description"
-      content="Ombre. Single-origin dark chocolate, cast by hand, tempered by patience."
+      content="Choco Toffee. Indulgent chocolate-covered toffee delight."
     />
 
     <!-- Google Fonts: Outfit & Poppins -->
@@ -66,7 +66,7 @@
       ></video>
     </div>
 
-    <!-- Luxury Dark Chocolate Main Screen -->
+    <!-- Choco Toffee Main Screen -->
     <div id="mainScreen" class="main-screen">
       <!-- Top Right Info Button -->
       <button id="infoBtn" class="info-btn" aria-label="Information and Steps">
@@ -76,7 +76,7 @@
       <!-- Container for Matter.js Physics Canvas -->
       <div id="matterContainer" class="matter-container"></div>
 
-      <!-- Canvas for chocolate & golden particle burst -->
+      <!-- Canvas for choco toffee & golden particle burst -->
       <canvas id="particleCanvas" class="particle-canvas"></canvas>
 
       <!-- Premium Glassmorphism Chocolate Card Popup -->
@@ -99,15 +99,18 @@
         <span class="popup-badge">EXCLUSIVITY UNLOCKED</span>
         <h1 class="popup-title">Congratulations!</h1>
         <p class="popup-subtitle">
-          Thank you for choosing Ombre artisanal chocolate.
+          Thank you for choosing our signature Choco Toffee.
         </p>
 
         <div class="reward-card">
-          <div class="reward-sparkle">✨</div>
-          <p class="reward-text">
-            Complimentary Reward:<br />
-            <strong>1x Signature Choco Toffee</strong>
-          </p>
+          <div class="reward-card-glow"></div>
+          <div class="reward-content">
+            <span class="reward-tag">SPECIAL GIFT</span>
+            <p class="reward-text">
+              Complimentary Reward:<br />
+              <strong class="reward-highlight">1x Signature Choco Toffee</strong>
+            </p>
+          </div>
         </div>
 
         <div class="question-box">
@@ -191,8 +194,10 @@
               <input
                 type="tel"
                 id="mobileInput"
-                placeholder="Mobile number"
+                placeholder="10-digit Mobile Number"
                 maxlength="10"
+                pattern="^[6-9]\d{9}$"
+                title="Please enter a valid 10-digit mobile number"
                 required
               />
             </div>
@@ -277,14 +282,10 @@
       <!-- Success Redemption Panel Card (Rendered in same location as popup-card) -->
       <div id="successDrawer" class="popup-card success-card-panel">
         <div class="card-shimmer"></div>
-        <div class="toffee-icon-wrap">
-          <div class="icon-glow"></div>
-          <span class="toffee-fallback">🎉</span>
-        </div>
 
         <h1 class="popup-title">Congratulations!</h1>
         <p class="popup-subtitle">
-          You've unlocked an exclusive LuvIt Eclairs tasting experience.
+          You've unlocked an exclusive Choco Toffee tasting experience.
         </p>
 
         <div class="retail-outlet-card">
@@ -293,24 +294,29 @@
         </div>
 
         <p class="claim-message-text">
-          Show this screen to the retailer to claim your complimentary Eclairs.
+          Show this screen to the retailer to claim your complimentary Choco Toffee.
         </p>
 
-        <!-- Unique Code Box Section -->
-        <div class="unique-code-section">
-          <span class="code-title">Unique Redemption Code</span>
-          <div class="code-display-wrap">
-            <span id="uniqueCodeText" class="code-text">ECLAIR-XXXX</span>
-            <button
-              id="copyCodeBtn"
-              class="copy-code-btn"
-              aria-label="Copy Code"
-            >
-              <i class="fa-regular fa-copy"></i>
-            </button>
+        <!-- Interactive Scratch Card Section -->
+        <div class="scratch-card-wrapper">
+          <span class="code-title">Scratch to Avail Award</span>
+          <div class="scratch-card-container" id="scratchContainer">
+            <!-- Hidden Secret Code Underneath -->
+            <div class="scratch-secret-content">
+              <span id="uniqueCodeText" class="code-text">TOFFEE-XXXX</span>
+              <button
+                id="copyCodeBtn"
+                class="copy-code-btn"
+                aria-label="Copy Code"
+              >
+                <i class="fa-regular fa-copy"></i>
+              </button>
+            </div>
+            <!-- Canvas Overlay that gets scratched off -->
+            <canvas id="scratchCanvas" class="scratch-canvas"></canvas>
           </div>
           <p class="code-instruction-text">
-            Show This CODE To Retailer To Experience The Advance Taste!
+            Scratch the gold card above to reveal your code & show to retailer!
           </p>
         </div>
 
@@ -390,7 +396,7 @@
             <div class="step-number">1</div>
             <div class="step-content">
               <h3>Confirm Product Arrival</h3>
-              <p>Verify if your Ombre dark chocolate package has arrived.</p>
+              <p>Verify if your Choco Toffee package has arrived.</p>
             </div>
           </div>
 
