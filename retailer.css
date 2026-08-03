@@ -2057,6 +2057,7 @@ body {
   .dash-main {
     margin-left: 0;
     padding: 20px 16px;
+    margin-bottom: 40px;
   }
 
   .dash-kpi-grid {
