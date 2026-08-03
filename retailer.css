@@ -2254,17 +2254,18 @@ body {
 }
 
 .dash-fab-menu {
-  display: flex;
+  display: none;
   flex-direction: column;
   gap: 10px;
   align-items: flex-end;
   opacity: 0;
   pointer-events: none;
   transform: translateY(15px) scale(0.95);
-  transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .dash-fab-menu.active {
+  display: flex;
   opacity: 1;
   pointer-events: auto;
   transform: translateY(0) scale(1);

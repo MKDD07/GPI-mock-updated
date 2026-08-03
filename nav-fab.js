@@ -42,12 +42,14 @@
     if (mainBtn && menu) {
       mainBtn.addEventListener("click", (e) => {
         e.stopPropagation();
-        menu.classList.toggle("active");
+        const isActive = menu.classList.toggle("active");
+        menu.style.display = isActive ? "flex" : "none";
       });
 
       document.addEventListener("click", (e) => {
         if (!fabContainer.contains(e.target)) {
           menu.classList.remove("active");
+          menu.style.display = "none";
         }
       });
     }
