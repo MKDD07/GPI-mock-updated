@@ -745,6 +745,13 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // Realtime Mobile Input Sanitization (only allow digits and max 10 chars)
+  if (mobileInput) {
+    mobileInput.addEventListener("input", (e) => {
+      mobileInput.value = mobileInput.value.replace(/\D/g, "").slice(0, 10);
+    });
+  }
+
   if (redemptionForm) {
     redemptionForm.addEventListener("submit", (e) => {
       e.preventDefault();
