@@ -2265,7 +2265,7 @@ body {
 }
 
 .dash-fab-menu.active {
-  display: flex;
+  display: flex !important;
   opacity: 1;
   pointer-events: auto;
   transform: translateY(0) scale(1);
