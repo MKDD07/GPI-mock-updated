@@ -1,4 +1,22 @@
 document.addEventListener("DOMContentLoaded", () => {
+  // Initialize Background Music (15% volume, looping)
+  const bgMusic = new Audio("https://cdn.pixabay.com/download/audio/2025/03/06/audio_88fa8997e5.mp3");
+  bgMusic.volume = 0.15;
+  bgMusic.loop = true;
+
+  // Attempt direct autoplay immediately
+  bgMusic.play().catch(() => {
+    // If blocked by browser policies, fallback to play on first click/touchstart
+    const startMusic = () => {
+      bgMusic.play().then(() => {
+        document.removeEventListener("click", startMusic);
+        document.removeEventListener("touchstart", startMusic);
+      }).catch(err => console.warn("Audio play failed on interaction", err));
+    };
+    document.addEventListener("click", startMusic);
+    document.addEventListener("touchstart", startMusic);
+  });
+
   const videoContainer = document.getElementById("videoContainer");
   const introVideo = document.getElementById("introVideo");
   const mainScreen = document.getElementById("mainScreen");
@@ -134,6 +152,12 @@ document.addEventListener("DOMContentLoaded", () => {
   function startSilentIntroVideo() {
     if (!videoContainer || !introVideo) return;
 
+    if (window.innerWidth > 768) {
+      videoContainer.style.display = "none";
+      triggerSeamlessTransition();
+      return;
+    }
+
     introVideo.src = "assets/video-initial.mp4";
     videoContainer.style.display = "block";
     gsap.fromTo(
@@ -168,7 +192,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // Fade out video smoothly with ease in/out
     gsap.to(videoContainer, {
       opacity: 0,
-      duration: 1.2,
+      duration: window.innerWidth > 768 ? 0 : 1.2,
       ease: "power2.inOut",
       onComplete: () => {
         videoContainer.style.display = "none";

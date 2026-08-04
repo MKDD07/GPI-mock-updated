@@ -1,4 +1,22 @@
 document.addEventListener("DOMContentLoaded", () => {
+  // Initialize Background Music (15% volume, looping)
+  const bgMusic = new Audio("https://cdn.pixabay.com/download/audio/2025/03/06/audio_88fa8997e5.mp3");
+  bgMusic.volume = 0.15;
+  bgMusic.loop = true;
+
+  // Attempt direct autoplay immediately
+  bgMusic.play().catch(() => {
+    // If blocked by browser policies, fallback to play on first click/touchstart
+    const startMusic = () => {
+      bgMusic.play().then(() => {
+        document.removeEventListener("click", startMusic);
+        document.removeEventListener("touchstart", startMusic);
+      }).catch(err => console.warn("Audio play failed on interaction", err));
+    };
+    document.addEventListener("click", startMusic);
+    document.addEventListener("touchstart", startMusic);
+  });
+
   // GSAP Loader Showcase Animation
   const loaderOverlay = document.getElementById("loaderOverlay");
   const loaderToffee = document.getElementById("loaderToffee");
@@ -194,6 +212,60 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
+  // iOS-style double chime for push notifications using Web Audio API
+  function playNotificationSound() {
+    if (typeof window.AudioContext === "undefined" && typeof window.webkitAudioContext === "undefined") return;
+    try {
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const playNote = (freq, delay, duration) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime + delay);
+        gain.gain.setValueAtTime(0.08, audioCtx.currentTime + delay);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + delay + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(audioCtx.currentTime + delay);
+        osc.stop(audioCtx.currentTime + delay + duration);
+      };
+      playNote(523.25, 0, 0.2); // C5
+      playNote(659.25, 0.08, 0.25); // E5
+    } catch(e) {}
+  }
+
+  function triggerOtpNotification() {
+    // Show green toast notification
+    const toast = document.createElement("div");
+    toast.className = "toast-notification";
+    toast.innerHTML = '<i class="fa-solid fa-circle-check"></i> OTP Code Sent Successfully!';
+    document.body.appendChild(toast);
+    setTimeout(() => toast.classList.add("show"), 50);
+    setTimeout(() => {
+      toast.classList.remove("show");
+      setTimeout(() => toast.remove(), 400);
+    }, 3000);
+
+    // Show SMS Push Notification at the top
+    const sms = document.createElement("div");
+    sms.className = "sms-push-notification";
+    sms.innerHTML = `
+      <div class="sms-icon"><i class="fa-solid fa-message"></i></div>
+      <div class="sms-content">
+        <div class="sms-title">MESSAGES <span class="sms-time" style="font-size: 10px; color: #8e8e93; font-weight: 400;">now</span></div>
+        <div class="sms-body">Your Retailer Verification Code is <strong>1234</strong></div>
+      </div>
+    `;
+    document.body.appendChild(sms);
+    setTimeout(() => sms.classList.add("show"), 50);
+    setTimeout(() => {
+      sms.classList.remove("show");
+      setTimeout(() => sms.remove(), 500);
+    }, 6000);
+
+    playNotificationSound();
+  }
+
   const otpModalOverlay = document.getElementById("otpModalOverlay");
   const otpMobileDisplay = document.getElementById("otpMobileDisplay");
   const verifyOtpBtn = document.getElementById("verifyOtpBtn");
@@ -260,6 +332,7 @@ document.addEventListener("DOMContentLoaded", () => {
         otpMobileDisplay.textContent = mobileVal;
       }
       otpModalOverlay.classList.add("active");
+      triggerOtpNotification();
       if (otpFields.length > 0) {
         setTimeout(() => otpFields[0].focus(), 200);
       }
@@ -274,6 +347,7 @@ document.addEventListener("DOMContentLoaded", () => {
         otpMobileDisplay.textContent = desktopMobileInput.value.trim();
       }
       otpModalOverlay.classList.add("active");
+      triggerOtpNotification();
       // Focus first OTP field
       if (otpFields.length > 0) {
         setTimeout(() => otpFields[0].focus(), 200);

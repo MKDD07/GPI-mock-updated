@@ -1,4 +1,22 @@
 document.addEventListener("DOMContentLoaded", () => {
+  // Initialize Background Music (15% volume, looping)
+  const bgMusic = new Audio("https://cdn.pixabay.com/download/audio/2025/03/06/audio_88fa8997e5.mp3");
+  bgMusic.volume = 0.15;
+  bgMusic.loop = true;
+
+  // Attempt direct autoplay immediately
+  bgMusic.play().catch(() => {
+    // If blocked by browser policies, fallback to play on first click/touchstart
+    const startMusic = () => {
+      bgMusic.play().then(() => {
+        document.removeEventListener("click", startMusic);
+        document.removeEventListener("touchstart", startMusic);
+      }).catch(err => console.warn("Audio play failed on interaction", err));
+    };
+    document.addEventListener("click", startMusic);
+    document.addEventListener("touchstart", startMusic);
+  });
+
   // Customer Claims Dataset
   const initialCustomers = [
     { name: "Mohit Sharma", mobile: "7206611307", upiId: "BHARATPE.900687@fbpe", date: "2026-02-16", amount: "20", status: "SUCCESS", happyCode: "7892", item: "1x Signature Choco Toffee", time: "10:42 AM Today", offerTitle: "20% Cashback + Bonus Toffee Pack", offerCode: "CHOCO-GOLD-77" },
