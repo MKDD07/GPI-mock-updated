@@ -37,6 +37,32 @@
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
+    <!-- Welcome Presentation Selector Overlay -->
+    <div id="presentationSelectorModal" class="steps-modal show">
+      <div class="steps-modal-backdrop"></div>
+      <div id="welcomeMatterContainer" class="matter-container"></div>
+      <div class="steps-modal-card">
+        <div class="welcome-logo-container">
+          <img src="assets/logo-toffee.png" alt="Toffee Logo" class="welcome-logo-animated" onerror="this.src='assets/toffee.png'" />
+        </div>
+        <p class="welcome-modal-text">Select a simulation pathway to demonstrate the campaign experience:</p>
+        
+        <div class="welcome-options-container">
+          <!-- Option 1: Customer Journey -->
+          <button id="btnCustomerJourney" class="btn-option btn-yes">
+            <span><i class="fa-solid fa-users welcome-btn-icon"></i> Customer Journey Demo</span>
+            <i class="fa-solid fa-chevron-right"></i>
+          </button>
+          
+          <!-- Option 2: Retailer Dashboard -->
+          <a href="retailer.html" id="btnRetailerDashboard" class="btn-option">
+            <span><i class="fa-solid fa-store welcome-btn-icon"></i> Retailer Dashboard</span>
+            <i class="fa-solid fa-chevron-right"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+
     <!-- Fullscreen QR Code Scanner Overlay -->
     <div id="qrScannerContainer" class="qr-scanner-container">
       <button id="skipQrBtn" class="skip-qr-btn">
@@ -184,10 +210,10 @@
             </div>
           </div>
 
-          <!-- Mobile Number Field -->
+           <!-- Mobile Number Field -->
           <div class="form-group">
             <label for="mobileInput">Enter Customer Mobile No.</label>
-            <div class="input-wrapper">
+            <div class="input-wrapper" style="position: relative;">
               <i class="fa-solid fa-mobile-screen input-icon"></i>
               <input
                 type="tel"
@@ -198,6 +224,10 @@
                 title="Please enter a valid 10-digit mobile number"
                 required
               />
+            </div>
+            <div class="otp-actions-container" style="margin-top: 8px; display: flex; justify-content: flex-end; align-items: center; gap: 10px;">
+              <button type="button" id="sendOtpBtn" class="btn-option" style="padding: 6px 12px; font-size: 11px; margin: 0; background: #e5c158; color: #000; border-radius: 6px; border: none; font-weight: 600; cursor: pointer;">Send OTP</button>
+              <button type="button" id="resendOtpBtn" class="btn-option" style="display: none; padding: 4px 8px; font-size: 10px; margin: 0; background: rgba(255,255,255,0.08); color: #e5c158; border: 1px solid rgba(229,193,88,0.3); border-radius: 4px; cursor: pointer;" disabled>Resend OTP (15s)</button>
             </div>
           </div>
 

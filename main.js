@@ -102,51 +102,54 @@ document.addEventListener("DOMContentLoaded", () => {
 
   /* ---------- 1. QR CAMERA SCANNER INITIALIZATION ---------- */
   let html5QrcodeScanner = null;
-  if (qrScannerContainer && typeof Html5Qrcode !== "undefined") {
-    // Hide video Container at startup
-    if (videoContainer) videoContainer.style.display = "none";
 
-    const qrSuccessCallback = (decodedText, decodedResult) => {
-      if (decodedText.trim().toLowerCase() === "mohit") {
-        if (qrFeedback) {
-          qrFeedback.style.color = "#4caf50";
-          qrFeedback.textContent =
-            "QR Code Verification Successful! Initializing...";
+  function startRealQRScanner() {
+    if (qrScannerContainer && typeof Html5Qrcode !== "undefined") {
+      // Hide video Container at startup
+      if (videoContainer) videoContainer.style.display = "none";
+
+      const qrSuccessCallback = (decodedText, decodedResult) => {
+        if (decodedText.trim().toLowerCase() === "mohit") {
+          if (qrFeedback) {
+            qrFeedback.style.color = "#4caf50";
+            qrFeedback.textContent =
+              "QR Code Verification Successful! Initializing...";
+          }
+
+          // Stop scanner camera immediately
+          dismissQrScanner();
+        } else {
+          if (qrFeedback) {
+            qrFeedback.style.color = "#f44336";
+            qrFeedback.textContent = "Invalid QR code. Scan target: 'mohit'";
+          }
         }
+      };
 
-        // Stop scanner camera immediately
-        dismissQrScanner();
-      } else {
-        if (qrFeedback) {
-          qrFeedback.style.color = "#f44336";
-          qrFeedback.textContent = "Invalid QR code. Scan target: 'mohit'";
-        }
-      }
-    };
+      const qrErrorCallback = (errorMessage) => {
+        // Keep scanning silently
+      };
 
-    const qrErrorCallback = (errorMessage) => {
-      // Keep scanning silently
-    };
-
-    // Instantiate and start camera scanner automatically
-    html5QrcodeScanner = new Html5Qrcode("qrReader");
-    html5QrcodeScanner
-      .start(
-        { facingMode: "environment" },
-        { fps: 10, qrbox: { width: 250, height: 250 } },
-        qrSuccessCallback,
-        qrErrorCallback,
-      )
-      .catch((err) => {
-        if (qrFeedback) {
-          qrFeedback.style.color = "#ff9800";
-          qrFeedback.textContent =
-            "Camera initialization failed. Please allow camera permissions.";
-        }
-      });
-  } else {
-    // Fallback if library or container is missing
-    startSilentIntroVideo();
+      // Instantiate and start camera scanner automatically
+      html5QrcodeScanner = new Html5Qrcode("qrReader");
+      html5QrcodeScanner
+        .start(
+          { facingMode: "environment" },
+          { fps: 10, qrbox: { width: 250, height: 250 } },
+          qrSuccessCallback,
+          qrErrorCallback,
+        )
+        .catch((err) => {
+          if (qrFeedback) {
+            qrFeedback.style.color = "#ff9800";
+            qrFeedback.textContent =
+              "Camera initialization failed. Please allow camera permissions.";
+          }
+        });
+    } else {
+      // Fallback if library or container is missing
+      startSilentIntroVideo();
+    }
   }
 
   function startSilentIntroVideo() {
@@ -674,6 +677,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function openSocialRatingModal() {
     switchCard(successDrawer, socialRatingModal);
+    setTimeout(() => {
+      if (typeof triggerPaytmCashbackNotification === "function") {
+        triggerPaytmCashbackNotification();
+      }
+    }, 1000);
   }
 
   function closeSocialRatingModal() {
@@ -731,8 +739,9 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         // Trigger Confetti Pop Effect if 5 Stars
-        if (currentSelectedRating === 5 && typeof fireGoldenConfetti === "function") {
-          fireGoldenConfetti();
+        if (currentSelectedRating === 5) {
+          if (typeof fireGoldenConfetti === "function") fireGoldenConfetti();
+          if (typeof triggerPaytmCashbackNotification === "function") triggerPaytmCashbackNotification();
         }
 
         // Thank-you feedback message display
@@ -1096,4 +1105,236 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
   }
+
+  const btnCustomerJourney = document.getElementById("btnCustomerJourney");
+  const presentationSelectorModal = document.getElementById("presentationSelectorModal");
+  if (btnCustomerJourney) {
+    btnCustomerJourney.addEventListener("click", () => {
+      if (presentationSelectorModal) {
+        presentationSelectorModal.style.display = "none";
+      }
+      startRealQRScanner();
+    });
+  }
+
+  function initWelcomeMatterPhysicsToffees() {
+    const container = document.getElementById("welcomeMatterContainer");
+    if (typeof Matter === "undefined" || !container) return;
+
+    const {
+      Engine,
+      Render,
+      Runner,
+      Bodies,
+      Composite,
+      Body,
+      Mouse,
+      MouseConstraint,
+    } = Matter;
+
+    const engine = Engine.create();
+    engine.world.gravity.y = 0.8;
+
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+
+    const render = Render.create({
+      element: container,
+      engine: engine,
+      options: {
+        width: width,
+        height: height,
+        wireframes: false,
+        background: "transparent",
+      },
+    });
+
+    Render.run(render);
+
+    const runner = Runner.create();
+    Runner.run(runner, engine);
+
+    const ground = Bodies.rectangle(width / 2, height + 30, width * 2, 60, {
+      isStatic: true,
+      render: { fillStyle: "transparent" },
+    });
+
+    Composite.add(engine.world, [ground]);
+
+    const mouse = Mouse.create(render.canvas);
+    const mouseConstraint = MouseConstraint.create(engine, {
+      mouse: mouse,
+      constraint: {
+        stiffness: 0.2,
+        render: {
+          visible: false,
+        },
+      },
+    });
+
+    Composite.add(engine.world, mouseConstraint);
+    render.mouse = mouse;
+
+    const spawnCount = 14;
+    let packetSpawnCount = 0;
+    for (let i = 0; i < spawnCount; i++) {
+      setTimeout(() => {
+        const x = Math.random() * (width - 80) + 40;
+        
+        let isPacket = false;
+        // Spawn exactly 3 packets maximum
+        if (packetSpawnCount < 3 && (Math.random() < 0.25 || (spawnCount - i) <= (3 - packetSpawnCount))) {
+          isPacket = true;
+          packetSpawnCount++;
+        }
+
+        const radius = isPacket ? (30 + Math.random() * 8) : (12 + Math.random() * 4);
+
+        const toffeeBody = Bodies.circle(x, -50, radius, {
+          restitution: 0.72,
+          friction: 0.05,
+          density: 0.0015,
+          render: {
+            sprite: {
+              texture: isPacket ? "assets/packet.png" : "assets/toffee.png",
+              xScale: isPacket ? ((radius * 2.4) / 450) : ((radius * 2) / 100),
+              yScale: isPacket ? ((radius * 2.4) / 450) : ((radius * 2) / 100),
+            },
+          },
+        });
+
+        const forceMagnitude = 0.015 * toffeeBody.mass;
+        Body.applyForce(toffeeBody, toffeeBody.position, {
+          x: (Math.random() - 0.5) * forceMagnitude,
+          y: Math.random() * forceMagnitude,
+        });
+
+        Composite.add(engine.world, [toffeeBody]);
+      }, i * 180);
+    }
+  }
+
+  // OTP code click handler
+  let otpTimerInterval = null;
+
+  function triggerOtpTimer() {
+    const sendOtpBtn = document.getElementById("sendOtpBtn");
+    const resendOtpBtn = document.getElementById("resendOtpBtn");
+    if (sendOtpBtn) sendOtpBtn.style.display = "none";
+    if (resendOtpBtn) {
+      resendOtpBtn.style.display = "inline-block";
+      resendOtpBtn.disabled = true;
+    }
+    
+    // Show green toast notification
+    const toast = document.createElement("div");
+    toast.className = "toast-notification";
+    toast.innerHTML = '<i class="fa-solid fa-circle-check"></i> OTP Code Sent Successfully!';
+    document.body.appendChild(toast);
+    setTimeout(() => toast.classList.add("show"), 50);
+    setTimeout(() => {
+      toast.classList.remove("show");
+      setTimeout(() => toast.remove(), 400);
+    }, 3000);
+
+    // Show SMS Push Notification at the top
+    const sms = document.createElement("div");
+    sms.className = "sms-push-notification";
+    sms.innerHTML = `
+      <div class="sms-icon"><i class="fa-solid fa-message"></i></div>
+      <div class="sms-content">
+        <div class="sms-title">MESSAGES <span class="sms-time" style="font-size: 10px; color: #8e8e93; font-weight: 400;">now</span></div>
+        <div class="sms-body">Your Choco Toffee Happy Code is <strong>7892</strong></div>
+      </div>
+    `;
+    document.body.appendChild(sms);
+    setTimeout(() => sms.classList.add("show"), 50);
+    setTimeout(() => {
+      sms.classList.remove("show");
+      setTimeout(() => sms.remove(), 500);
+    }, 6000);
+
+    let secondsLeft = 15;
+    if (resendOtpBtn) resendOtpBtn.textContent = `Resend OTP (${secondsLeft}s)`;
+    
+    if (otpTimerInterval) clearInterval(otpTimerInterval);
+    otpTimerInterval = setInterval(() => {
+      secondsLeft--;
+      if (secondsLeft <= 0) {
+        clearInterval(otpTimerInterval);
+        if (resendOtpBtn) {
+          resendOtpBtn.disabled = false;
+          resendOtpBtn.textContent = "Resend OTP";
+        }
+      } else {
+        if (resendOtpBtn) resendOtpBtn.textContent = `Resend OTP (${secondsLeft}s)`;
+      }
+    }, 1000);
+  }
+
+  // Bind OTP button actions
+  setTimeout(() => {
+    const sendOtpBtn = document.getElementById("sendOtpBtn");
+    const resendOtpBtn = document.getElementById("resendOtpBtn");
+    if (sendOtpBtn) {
+      sendOtpBtn.addEventListener("click", () => {
+        triggerOtpTimer();
+      });
+    }
+    if (resendOtpBtn) {
+      resendOtpBtn.addEventListener("click", () => {
+        triggerOtpTimer();
+      });
+    }
+  }, 100);
+
+  // iOS-style double chime for push notifications using Web Audio API
+  function playNotificationSound() {
+    if (typeof window.AudioContext === "undefined" && typeof window.webkitAudioContext === "undefined") return;
+    try {
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const playNote = (freq, delay, duration) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime + delay);
+        gain.gain.setValueAtTime(0.08, audioCtx.currentTime + delay);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + delay + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(audioCtx.currentTime + delay);
+        osc.stop(audioCtx.currentTime + delay + duration);
+      };
+      playNote(523.25, 0, 0.2); // C5
+      playNote(659.25, 0.08, 0.25); // E5
+    } catch(e) {}
+  }
+  window.playNotificationSound = playNotificationSound;
+
+  function triggerPaytmCashbackNotification() {
+    const upiSms = document.createElement("div");
+    upiSms.className = "sms-push-notification";
+    upiSms.innerHTML = `
+      <div class="sms-icon" style="background: transparent; display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 9px; overflow: hidden; padding: 0; box-sizing: border-box;">
+        <img src="assets/paytm.svg" alt="Paytm" style="width: 100%; height: 100%; object-fit: contain; display: block;" />
+      </div>
+      <div class="sms-content">
+        <div class="sms-title" style="font-weight: 700; color: #0f172a;">PAYTM <span class="sms-time" style="font-size: 10px; color: #64748b; font-weight: 400;">now</span></div>
+        <div class="sms-body" style="font-size: 12px; color: #334155; margin-top: 2px;">
+          <strong>Cashback Received: ₹30.00</strong><br/>
+          <span style="font-size: 10px; color: #64748b; display: block; margin-top: 1px;">Txn ID: 2026080415309483 • Ref: Choco Toffee Claim vpa: toffee@upi</span>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(upiSms);
+    playNotificationSound();
+    setTimeout(() => upiSms.classList.add("show"), 50);
+    setTimeout(() => {
+      upiSms.classList.remove("show");
+      setTimeout(() => upiSms.remove(), 500);
+    }, 7000);
+  }
+  window.triggerPaytmCashbackNotification = triggerPaytmCashbackNotification;
+
+  initWelcomeMatterPhysicsToffees();
 });
