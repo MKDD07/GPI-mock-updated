@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>GSAP Loading Screen</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* ---------- Background floating icons ----------
+     90% pastel / near-white, 10% soft blue, matte finish (low opacity, soft blur, no shine) */
+  .bg-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    z-index: 0;
+    pointer-events: none;
+  }
+  .bg-icon {
+    position: absolute;
+    pointer-events: none;
+    transform-origin: center center;
+    will-change: transform;
+  }
+  /* matte pastel-white variant (majority) */
+  .bg-icon.tone-white {
+    color: #eef2f6;
+  }
+  /* matte soft-blue variant (minority accent) */
+  .bg-icon.tone-blue {
+    color: #b9d2ea;
+  }
+
+  .loader-stage {
+    position: relative;
+    width: 390px;
+    height: 145px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+  }
+  .loader-stage svg {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+
+  #logo1 {
+    width: 185px;
+    height: auto;
+    opacity: 0;
+  }
+  #logo1 path {
+    fill: url(#logo-grad);
+    stroke: url(#logo-grad);
+    stroke-width: 1.5;
+  }
+  #logo2 {
+    opacity: 0;
+  }
+  #part-one {
+    stroke: #FDE300;
+    stroke-width: 1.5;
+  }
+  #part-two {
+    stroke: #221E1F;
+    stroke-width: 1.5;
+  }
+  #ending-stage {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    width: 100%;
+    height: 100%;
+  }
+  #logo-ending {
+    width: 100px;
+    height: auto;
+    margin-bottom: -15px;
+    opacity: 0;
+    top: -15px;
+  }
+  #text-adoteam {
+    position: relative;
+    display: flex;
+    font-family: 'Poppins', sans-serif;
+    font-size: 54px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    color: #000000;
+    text-transform: lowercase;
+    perspective: 500px;
+  }
+  #text-adoteam span {
+    display: inline-block;
+    transform-origin: bottom center;
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-container"></div>
+
+<div class="loader-stage">
+
+  <!-- FIRST SVG: outline logo -->
+  <svg id="logo1" width="255" height="138" viewBox="0 0 255 138" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="logo-grad" x1="1" y1="0" x2="0" y2="0">
+        <stop offset="0%" stop-color="#1257A2" />
+        <stop offset="39.13%" stop-color="#1257A2" />
+        <stop offset="39.15%" stop-color="#221E1F" />
+        <stop offset="100%" stop-color="#221E1F" />
+      </linearGradient>
+    </defs>
+    <path d="M254.075 62.8656V131.992C254.075 134.971 251.657 137.389 248.677 137.389H223.494C220.504 137.389 218.097 134.971 218.097 131.992V73.8649C218.097 54.6728 202.532 39.1075 183.34 39.1075H154.606V131.992C154.606 134.971 152.188 137.389 149.209 137.389H120.723C117.733 137.389 115.326 134.971 115.326 131.992V39.1075H68.824C60.3073 39.1075 52.6003 42.5616 47.0197 48.1423C41.4498 53.7229 37.9957 61.4299 37.9957 69.9466C37.9957 86.9691 51.7907 100.775 68.824 100.775H92.1503C95.1295 100.775 97.5474 103.193 97.5474 106.172V131.992C97.5474 134.971 95.1295 137.389 92.1503 137.389H61.0198C27.3202 137.389 0 110.069 0 76.3584V61.0306C0 27.3202 27.3202 0 61.0198 0H191.209C225.923 0 254.075 28.1513 254.075 62.8656Z"/>
+  </svg>
+
+  <!-- SECOND SVG: two-part mark (id 1 = yellow bell, id 2 = dark outline) -->
+  <svg id="logo2" width="96" height="113" viewBox="0 0 96 113" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path id="part-one" fill-rule="evenodd" clip-rule="evenodd" d="M89.0111 47.0438C86.2582 49.8336 86.4517 52.405 76.6011 53.4535C68.23 54.346 66.1263 52.9043 59.94 51.2878C59.2908 59.6636 47.0369 64.3632 40.1639 58.0034C38.5347 56.4993 36.4497 53.8155 36.1875 51.1318C33.4908 51.887 32.1674 52.7046 28.8089 53.2726C25.875 53.7656 22.5727 53.7906 19.5139 53.4848C14.6823 53.0104 10.3375 52.0493 7.74689 48.2421L6.76059 46.9502C6.76059 55.8751 8.45853 62.9901 11.0616 69.3749C14.5137 77.838 21.6239 85.4897 27.7664 92.3801L40.0079 106.735C42.1116 108.994 43.7159 112.339 47.8983 112.339C51.7874 112.339 53.8474 109.181 55.6452 106.947C56.1946 106.267 56.6191 105.961 57.1684 105.281L67.9054 92.6172C72.6122 86.5695 79.9721 79.7853 83.5615 71.7591C84.0359 70.7043 84.192 70.2986 84.6539 69.3063C87.6441 62.9589 89.0236 54.3648 89.0236 47.0438" fill="#FDE300"/>
+    <path id="part-two" fill-rule="evenodd" clip-rule="evenodd" d="M6.75434 46.9565L7.74064 48.2484C10.3313 52.0556 14.676 53.0105 19.5077 53.491C22.5727 53.7906 25.875 53.7719 28.8027 53.2788C32.1611 52.7109 33.4845 51.8995 36.1813 51.1381C36.8991 50.4765 37.1988 50.4203 37.798 49.7775C40.9193 46.4072 43.9032 37.5385 45.289 35.404C45.8571 33.1509 46.6811 32.4456 49.3653 32.9699L50.5514 35.404C51.2318 36.9019 51.8249 38.3373 52.4803 39.6605C53.1982 41.1084 53.7163 42.494 54.4904 44.0293C56.0885 47.2124 57.262 49.3032 59.9276 51.2941C66.1138 52.9168 68.2175 54.3523 76.5887 53.4598C86.4393 52.4113 86.2457 49.8399 88.9987 47.0501C89.2421 46.0827 90.9962 42.4316 91.9139 38.6681C93.0625 33.9435 91.9201 33.3444 95.7343 30.7917V21.5734C93.1499 20.3376 83.6801 18.4715 80.1344 18.5776C56.1446 17.8911 58.0236 22.7904 47.8671 22.778C41.8057 22.778 38.4722 20.5062 32.698 19.3453C26.9487 18.1907 21.6551 18.3654 15.5999 18.5839C14.882 18.69 12.7409 18.7524 11.5361 18.9271C8.33993 19.4015 2.40334 20.4125 0 21.5672V30.7855C4.08881 33.5254 2.0725 31.7965 3.8516 38.2812C4.24488 39.7042 4.58196 41.3019 5.10632 42.6937C5.69936 44.254 6.28616 45.3899 6.73561 46.9502M25.7751 25.0747C24.8325 26.4104 20.9746 27.2092 21.2431 24.7939C21.4491 22.9777 25.207 22.959 25.7751 25.0747ZM60.4394 40.503C57.1497 41.8324 55.9012 31.497 55.8887 30.074C55.845 25.0935 60.7266 24.151 65.2648 23.9014C69.3724 23.6767 69.9217 25.8112 67.1938 26.685C65.0089 27.384 62.9676 26.6912 61.3508 28.3015C57.5679 32.0712 61.5007 37.9317 60.4394 40.503ZM70.6021 26.1108C70.29 25.262 70.2963 24.5692 70.6396 23.7766C72.3812 23.3334 73.6422 23.6205 74.7534 24.3944C74.5037 26.3667 72.4749 26.4915 70.6021 26.1108ZM8.52719 33.6252C8.52719 31.6031 8.15889 28.8819 8.75816 27.1156C9.30125 25.4991 10.5747 24.201 12.4662 24.0512C13.9769 22.8217 18.022 23.452 19.7324 23.9201L19.6325 26.3167C16.3303 27.4464 13.1591 26.6038 11.8045 30.1426C10.6746 33.0822 12.4038 38.8866 10.6621 40.7402C8.32744 40.2534 8.5272 35.7909 8.53344 33.6315L8.52719 33.6252Z" fill="#221E1F"/>
+    <path id="part-three" fill-rule="evenodd" clip-rule="evenodd" d="M15.6186 18.584C21.6676 18.3656 26.9612 18.1908 32.7167 19.3455C38.4847 20.5001 41.8244 22.7719 47.8859 22.7781C58.0361 22.7906 56.1634 17.885 80.1531 18.5778C78.992 16.2249 76.4326 13.4225 74.5724 11.5564C59.0661 -3.94678 36.381 -3.69713 21.3867 11.3754L18.3715 14.7394C17.4726 15.738 16.1929 17.4232 15.6249 18.5778" fill="#FDE300"/>
+  </svg>
+
+  <!-- ENDING STAGE: duplicated logo + text -->
+  <div id="ending-stage">
+    <svg id="logo-ending" width="367" height="207" viewBox="0 0 367 207" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M364.554 81.52C357.334 49.16 335.774 22.53 305.384 8.84C291.994 2.81 278.044 0 263.154 0L182.484 0.06H103.684C82.2637 0.08 61.8337 6.47 44.3937 18.74C18.7037 36.83 2.44375 65.68 0.243746 97C-3.76625 154.34 42.2237 205.46 99.6737 206.82L183.224 207H183.234L268.724 206.9C281.904 206.88 294.284 203.29 305.934 198.08C350.574 178.09 375.154 129.03 364.554 81.52ZM308.594 144.4C297.884 156.17 282.984 163.95 266.724 163.97L183.234 164.07H183.224L101.204 163.92C75.1037 163.88 53.0037 145.65 45.4637 121.01C39.8137 102.55 43.4637 82.99 55.3037 67.19C65.7337 53.28 83.1637 43.44 101.704 43.42L183.664 43.34L265.694 43.37C289.774 43.38 311.154 59.33 320.104 81.37C328.804 102.8 324.204 127.25 308.594 144.4Z" fill="url(#paint0_linear_2083_3802)"/>
+<defs>
+<linearGradient id="paint0_linear_2083_3802" x1="183.13" y1="17.3486" x2="183.027" y2="17.3486" gradientUnits="userSpaceOnUse">
+<stop stop-color="#1257A2"/>
+<stop offset="1" stop-color="#0F1017"/>
+</linearGradient>
+</defs>
+    </svg>
+    <div id="text-adoteam">
+      <span>a</span><span>d</span><span>o</span><span>t</span><span>e</span><span>a</span><span>m</span>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.15/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.1/dist/MorphSVGPlugin.min.js"></script>
+<script>
+  /* =========================================================
+     LOGO SETUP
+     ========================================================= */
+  const logo1Path = document.querySelector('#logo1 path');
+  const len1 = logo1Path.getTotalLength();
+  logo1Path.style.strokeDasharray = len1;
+  logo1Path.style.strokeDashoffset = len1;
+  logo1Path.style.fillOpacity = 0;
+
+  const partOne = document.getElementById('part-one');
+  const partTwo = document.getElementById('part-two');
+  const partThree = document.getElementById('part-three');
+
+  [partOne, partTwo].forEach(p => {
+    const l = p.getTotalLength();
+    p.style.strokeDasharray = l;
+    p.style.strokeDashoffset = l;
+  });
+
+  [partOne, partTwo, partThree].forEach(p => {
+    p.style.fillOpacity = 0;
+  });
+
+  // common transform origin so scale/rotate never "jumps" between stages
+  gsap.set(['#logo1', '#logo2', '#logo-ending'], { transformOrigin: '50% 50%' });
+
+  const tl = gsap.timeline({ repeat: -1, defaults: { overwrite: 'auto' } });
+
+  /* =========================================================
+     STAGE 1 — draw logo1 (line-draw -> fill)
+     ========================================================= */
+  tl.set('#logo1', { opacity: 0, scale: 0.92, rotate: 0, filter: 'blur(0px)' })
+    .to('#logo1', { opacity: 1, duration: 0.4, ease: 'power1.out' })
+    .to(logo1Path, {
+      strokeDashoffset: 0,
+      duration: 1.5,
+      ease: 'power2.inOut'
+    }, '<')
+    .to(logo1Path, {
+      fillOpacity: 1,
+      duration: 0.5,
+      ease: 'power1.out'
+    }, '>')
+    .to('#logo1', {
+      scale: 1.04,
+      duration: 0.45,
+      ease: 'power1.out'
+    })
+
+    /* ---------------------------------------------------------
+       MORPH 1 -> 2
+       --------------------------------------------------------- */
+    .to('#logo1', {
+      opacity: 0,
+      scale: 0.5,
+      rotate: 12,
+      filter: 'blur(6px)',
+      duration: 0.7,
+      ease: 'power2.inOut'
+    }, 'morph12')
+    .set('#logo2', { opacity: 0, scale: 1.5, rotate: -12, filter: 'blur(6px)' }, 'morph12+=0.1')
+    .to('#logo2', {
+      opacity: 1,
+      scale: 1,
+      rotate: 0,
+      filter: 'blur(0px)',
+      duration: 0.7,
+      ease: 'power2.inOut'
+    }, 'morph12+=0.15')
+    .to(partOne, {
+      strokeDashoffset: 0,
+      duration: 0.7,
+      ease: 'power2.out'
+    }, 'morph12+=0.35')
+    .to(partTwo, {
+      strokeDashoffset: 0,
+      duration: 0.7,
+      ease: 'power2.out'
+    }, 'morph12+=0.55')
+    .to([partOne, partTwo, partThree], {
+      fillOpacity: 1,
+      duration: 0.5,
+      ease: 'power1.out'
+    }, '>')
+    .to('#logo2', {
+      scale: 1.08,
+      duration: 0.4,
+      ease: 'power1.inOut',
+      yoyo: true,
+      repeat: 1
+    })
+
+    /* ---------------------------------------------------------
+       MORPH 2 -> text & ending stage logo
+       --------------------------------------------------------- */
+    .to('#logo2', {
+      opacity: 0,
+      scale: 0.6,
+      filter: 'blur(6px)',
+      duration: 0.55,
+      ease: 'power2.in'
+    }, '+=0.25')
+
+    .set('#ending-stage', { opacity: 1, scale: 1 })
+    .fromTo('#logo-ending', {
+      opacity: 0,
+      scale: 0.6,
+      rotate: -10,
+      y: 20,
+      filter: 'blur(6px)'
+    }, {
+      opacity: 1,
+      scale: 1,
+      rotate: 0,
+      y: 0,
+      filter: 'blur(0px)',
+      duration: 0.8,
+      ease: 'back.out(1.5)'
+    }, '-=0.15')
+    /* Stage 3: show "adoteam" word character by character */
+    .fromTo('#text-adoteam span', {
+      opacity: 0,
+      y: 40,
+      rotateX: -70,
+      filter: 'blur(8px)'
+    }, {
+      opacity: 1,
+      y: 0,
+      rotateX: 0,
+      filter: 'blur(0px)',
+      duration: 0.8,
+      stagger: 0.06,
+      ease: 'back.out(1.5)'
+    }, '-=0.6')
+    .to('#ending-stage', {
+      opacity: 0,
+      scale: 0.95,
+      filter: 'blur(6px)',
+      duration: 0.6,
+      ease: 'power2.in'
+    }, '+=1.5')
+
+    /* =========================================================
+       RESET FOR LOOP
+       ========================================================= */
+    .set('#logo1', { opacity: 0, scale: 1, rotate: 0, filter: 'blur(0px)' })
+    .set(logo1Path, {
+      strokeDashoffset: (i, target) => target.getTotalLength(),
+      fillOpacity: 0
+    })
+    .set([partOne, partTwo], {
+      strokeDashoffset: (i, target) => target.getTotalLength()
+    })
+    .set([partOne, partTwo, partThree], {
+      fillOpacity: 0
+    })
+    .set('#logo2', { scale: 1, opacity: 0, rotate: 0, filter: 'blur(0px)' })
+    .set('#ending-stage', { opacity: 0, scale: 1, filter: 'blur(0px)' })
+    .set('#logo-ending', { opacity: 0, scale: 0.6, y: 0, rotate: 0 })
+    .set('#text-adoteam span', { opacity: 0, y: 0, rotateX: 0, filter: 'blur(0px)' });
+
+  /* =========================================================
+     BACKGROUND ICONS
+     Matte, pastel-white dominant (90%) + soft blue accent (10%)
+     ========================================================= */
+  const bgContainer = document.querySelector('.bg-container');
+  const bgIcons = [
+    'fa-code', 'fa-bell', 'fa-lightbulb', 'fa-rocket', 'fa-star',
+    'fa-bolt', 'fa-terminal', 'fa-compass', 'fa-atom', 'fa-laptop-code',
+    'fa-cube', 'fa-layer-group', 'fa-icons', 'fa-network-wired'
+  ];
+
+  const ICON_COUNT = 26;
+
+  for (let i = 0; i < ICON_COUNT; i++) {
+    const iconEl = document.createElement('i');
+    const randomIcon = bgIcons[Math.floor(Math.random() * bgIcons.length)];
+
+    // 90% pastel-white matte, 10% soft-blue matte
+    const tone = Math.random() < 0.9 ? 'tone-white' : 'tone-blue';
+    iconEl.className = `fa-solid ${randomIcon} bg-icon ${tone}`;
+
+    const left = Math.random() * 100;
+    const top = Math.random() * 100;
+    const size = 18 + Math.random() * 26;
+    const opacity = tone === 'tone-blue'
+      ? 0.20 + Math.random() * 0.08   // slightly more visible accent
+      : 0.15 + Math.random() * 0.06;  // subtle matte white
+    const blur = 0.4 + Math.random() * 1.2;
+
+    iconEl.style.left = `${left}%`;
+    iconEl.style.top = `${top}%`;
+    iconEl.style.fontSize = `${size}px`;
+    iconEl.style.opacity = opacity;
+    iconEl.style.filter = `blur(${blur}px)`;
+
+    bgContainer.appendChild(iconEl);
+
+    gsap.to(iconEl, {
+      x: 'random(-70, 70)',
+      y: 'random(-70, 70)',
+      rotation: 'random(-100, 100)',
+      duration: 'random(14, 26)',
+      repeat: -1,
+      yoyo: true,
+      ease: 'sine.inOut'
+    });
+  }
+</script>
+
+</body>
+</html>
