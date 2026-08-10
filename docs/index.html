@@ -166,21 +166,110 @@
 
         <div class="retailer-header">
           <div class="retailer-gift-icon">
-            <i class="fa-solid fa-gift"></i>
+            <i class="fa-solid fa-store-slash"></i>
           </div>
-          <h2>Ask Your Retailer</h2>
+          <h2>Retailer Issue Report</h2>
           <p>
-            Please check with your store merchant or seller to claim the Choco
-            Toffee reward you received.
+            Please tell us why the retailer was unable to provide your Choco Toffee reward.
           </p>
+        </div>
+
+        <!-- Complaint Checkboxes -->
+        <div class="retailer-complaint-list">
+          <label class="retailer-checkbox-item" for="chkOutOfStock">
+            <input type="checkbox" id="chkOutOfStock" name="retailerIssue" value="out_of_stock" />
+            <span class="retailer-checkmark"><i class="fa-solid fa-check"></i></span>
+            <span class="retailer-checkbox-text">
+              <strong>Out of Stock</strong>
+              <small>Retailer doesn't have Choco Toffee available</small>
+            </span>
+          </label>
+
+          <label class="retailer-checkbox-item" for="chkRefused">
+            <input type="checkbox" id="chkRefused" name="retailerIssue" value="refused" />
+            <span class="retailer-checkmark"><i class="fa-solid fa-check"></i></span>
+            <span class="retailer-checkbox-text">
+              <strong>Retailer Refused</strong>
+              <small>Merchant declined to honour the reward</small>
+            </span>
+          </label>
+
+          <label class="retailer-checkbox-item" for="chkUnaware">
+            <input type="checkbox" id="chkUnaware" name="retailerIssue" value="unaware" />
+            <span class="retailer-checkmark"><i class="fa-solid fa-check"></i></span>
+            <span class="retailer-checkbox-text">
+              <strong>Retailer Unaware</strong>
+              <small>Shop owner has no knowledge of this campaign</small>
+            </span>
+          </label>
+
+          <label class="retailer-checkbox-item" for="chkClosed">
+            <input type="checkbox" id="chkClosed" name="retailerIssue" value="closed" />
+            <span class="retailer-checkmark"><i class="fa-solid fa-check"></i></span>
+            <span class="retailer-checkbox-text">
+              <strong>Shop Was Closed</strong>
+              <small>Unable to visit — store was not open</small>
+            </span>
+          </label>
         </div>
 
         <button
           id="retailerGotItBtn"
           class="btn-option btn-yes submit-redemption-btn"
         >
-          I Understand
+          <i class="fa-solid fa-paper-plane" style="margin-right:6px;"></i> Submit Report
         </button>
+      </div>
+
+      <!-- Fake Call Overlay -->
+      <div id="fakeCallOverlay" class="fake-call-overlay" style="display:none;">
+        <!-- Connecting Screen -->
+        <div id="callConnecting" class="call-connecting-screen">
+          <div class="call-avatar-ring">
+            <div class="call-avatar-pulse"></div>
+            <div class="call-avatar-pulse delay1"></div>
+            <div class="call-avatar-pulse delay2"></div>
+            <div class="call-avatar-icon">
+              <i class="fa-solid fa-headset"></i>
+            </div>
+          </div>
+          <h3 class="call-name">Choco Toffee Support</h3>
+          <p class="call-status-text" id="callStatusText">Connecting...</p>
+          <div class="call-timer-badge" id="callCountdownBadge">
+            <span id="callCountdown">5</span>
+          </div>
+          <button id="endCallEarlyBtn" class="call-end-btn call-end-btn-sm">
+            <i class="fa-solid fa-phone-slash"></i>
+          </button>
+        </div>
+
+        <!-- Active Chat Call Screen -->
+        <div id="callActive" class="call-active-screen" style="display:none;">
+          <div class="call-active-header">
+            <div class="call-active-avatar">
+              <i class="fa-solid fa-headset"></i>
+              <span class="call-live-dot"></span>
+            </div>
+            <div class="call-active-info">
+              <span class="call-active-name">Choco Toffee Support</span>
+              <span class="call-active-duration" id="callDuration">00:00</span>
+            </div>
+            <button id="endCallBtn" class="call-end-btn">
+              <i class="fa-solid fa-phone-slash"></i>
+            </button>
+          </div>
+
+          <div class="call-chat-messages" id="callChatMessages">
+            <!-- Messages appear here -->
+          </div>
+
+          <div class="call-input-row" id="callInputRow">
+            <input type="text" id="callUserInput" class="call-user-input" placeholder="Type your reply..." />
+            <button id="callSendBtn" class="call-send-btn">
+              <i class="fa-solid fa-paper-plane"></i>
+            </button>
+          </div>
+        </div>
       </div>
 
       <!-- Happy Code Redemption Panel Card (Rendered in same location as popup-card) -->

@@ -1034,12 +1034,278 @@ document.addEventListener("DOMContentLoaded", () => {
     closeDrawerBtn.addEventListener("click", closeRedemptionDrawer);
   if (closeRetailerBtn)
     closeRetailerBtn.addEventListener("click", closeRetailerDrawer);
-  if (retailerGotItBtn)
-    retailerGotItBtn.addEventListener("click", closeRetailerDrawer);
+
+  // ===== RETAILER COMPLAINT + FAKE CALL LOGIC =====
+  if (retailerGotItBtn) {
+    retailerGotItBtn.addEventListener("click", () => {
+      const checked = document.querySelectorAll('input[name="retailerIssue"]:checked');
+      if (checked.length === 0) {
+        // Shake the list to indicate validation failure
+        const list = document.querySelector(".retailer-complaint-list");
+        if (list) {
+          list.style.animation = "none";
+          list.offsetHeight; // reflow
+          list.style.animation = "shakeList 0.4s ease";
+          setTimeout(() => { list.style.animation = ""; }, 500);
+        }
+        return;
+      }
+
+      const issues = Array.from(checked).map(c => c.value);
+      playClickSound();
+
+      // Hide retailer drawer, show fake call overlay
+      if (retailerDrawer) retailerDrawer.style.display = "none";
+      startFakeCall(issues);
+    });
+  }
+
   if (closeWarningBtn)
     closeWarningBtn.addEventListener("click", closeWarningModal);
   if (warningGotItBtn)
     warningGotItBtn.addEventListener("click", closeWarningModal);
+
+  // ===== FAKE CALL SYSTEM =====
+  const GROQ_CF_ENDPOINT = "https://groq-proxy.toffeecampaign.workers.dev/api/chat";
+
+  let callDurationTimer = null;
+  let callSecondsElapsed = 0;
+  let callEnded = false;
+  let conversationHistory = [];
+
+  function startFakeCall(issues) {
+    const overlay = document.getElementById("fakeCallOverlay");
+    const connecting = document.getElementById("callConnecting");
+    const countdown = document.getElementById("callCountdown");
+    const statusText = document.getElementById("callStatusText");
+
+    if (!overlay) return;
+    overlay.style.display = "flex";
+    callEnded = false;
+
+    // Countdown 5 → 0
+    let secs = 5;
+    if (countdown) countdown.textContent = secs;
+    const countdownInterval = setInterval(() => {
+      secs--;
+      if (countdown) countdown.textContent = secs;
+      if (secs <= 2 && statusText) statusText.textContent = "Ringing...";
+      if (secs <= 0) {
+        clearInterval(countdownInterval);
+        if (statusText) statusText.textContent = "Connected!";
+        setTimeout(() => switchToActiveCall(issues), 600);
+      }
+    }, 1000);
+
+    // End call early from connecting screen
+    const endEarlyBtn = document.getElementById("endCallEarlyBtn");
+    if (endEarlyBtn) {
+      endEarlyBtn.onclick = () => {
+        clearInterval(countdownInterval);
+        endFakeCall();
+      };
+    }
+  }
+
+  function switchToActiveCall(issues) {
+    const connecting = document.getElementById("callConnecting");
+    const callActive = document.getElementById("callActive");
+    if (connecting) connecting.style.display = "none";
+    if (callActive) callActive.style.display = "flex";
+
+    // Start call timer
+    callSecondsElapsed = 0;
+    clearInterval(callDurationTimer);
+    callDurationTimer = setInterval(() => {
+      callSecondsElapsed++;
+      const mm = String(Math.floor(callSecondsElapsed / 60)).padStart(2, "0");
+      const ss = String(callSecondsElapsed % 60).padStart(2, "0");
+      const durEl = document.getElementById("callDuration");
+      if (durEl) durEl.textContent = `${mm}:${ss}`;
+    }, 1000);
+
+    // Set up conversation context
+    const issueLabels = {
+      out_of_stock: "Out of Stock",
+      refused: "Retailer Refused",
+      unaware: "Retailer Unaware",
+      closed: "Shop Was Closed"
+    };
+    const issueText = issues.map(i => issueLabels[i] || i).join(", ");
+
+    conversationHistory = [
+      {
+        role: "system",
+        content: `You are a friendly and professional Choco Toffee customer support agent named Priya. 
+You are on a phone call with a customer who reported the following issues with their retailer: ${issueText}.
+Your job is to:
+1. First greet the customer warmly and acknowledge their complaint.
+2. Ask 2-3 short follow-up questions to understand the situation better (e.g., retailer name/location, what happened, etc.).
+3. Reassure them their issue has been noted and escalated.
+4. At the very end, thank them and say the call is ending.
+Keep responses concise (1-3 sentences each). Sound like a real human support agent, warm and empathetic.
+When you're done gathering info and have reassured the customer, respond with your final message and end it with: "Thank you for calling Choco Toffee Support. We'll resolve this for you. Have a great day! [CALL_END]"`
+      }
+    ];
+
+    // Greet immediately
+    addAgentTyping();
+    setTimeout(async () => {
+      removeTyping();
+      const greeting = await callGroqAPI(null);
+      addMessage("agent", greeting);
+      if (greeting.includes("[CALL_END]")) {
+        handleCallEnd();
+      }
+    }, 1200);
+
+    // Wire up send button and enter key
+    const sendBtn = document.getElementById("callSendBtn");
+    const input = document.getElementById("callUserInput");
+    const endBtn = document.getElementById("endCallBtn");
+
+    if (sendBtn) sendBtn.onclick = sendCallMessage;
+    if (input) {
+      input.onkeydown = (e) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          sendCallMessage();
+        }
+      };
+    }
+    if (endBtn) endBtn.onclick = endFakeCall;
+  }
+
+  async function sendCallMessage() {
+    if (callEnded) return;
+    const input = document.getElementById("callUserInput");
+    if (!input || !input.value.trim()) return;
+    const text = input.value.trim();
+    input.value = "";
+    addMessage("user", text);
+    addAgentTyping();
+
+    const reply = await callGroqAPI(text);
+    removeTyping();
+    addMessage("agent", reply);
+
+    if (reply.includes("[CALL_END]")) {
+      handleCallEnd();
+    }
+  }
+
+  async function callGroqAPI(userMessage) {
+    if (userMessage) {
+      conversationHistory.push({ role: "user", content: userMessage });
+    }
+
+    try {
+      const response = await fetch(GROQ_CF_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "llama3-8b-8192",
+          messages: conversationHistory,
+          max_tokens: 150,
+          temperature: 0.7
+        })
+      });
+
+      if (!response.ok) throw new Error("API error");
+      const data = await response.json();
+      const reply = data.choices?.[0]?.message?.content || "I understand. Let me note that for you.";
+      conversationHistory.push({ role: "assistant", content: reply });
+      return reply;
+    } catch (err) {
+      // Fallback scripted responses if API fails
+      const fallbacks = [
+        "Hello! Thank you for reaching out to Choco Toffee Support. I'm sorry to hear you had trouble claiming your reward. Could you please tell me the name of the retailer where this happened?",
+        "I understand. That's definitely something we want to look into. Was this your first time visiting this store?",
+        "Got it. We've registered your complaint and our team will follow up with the retailer. Is there anything else I can help you with?",
+        "Thank you so much for bringing this to our attention. Your feedback helps us improve. Thank you for calling Choco Toffee Support. We'll resolve this for you. Have a great day! [CALL_END]"
+      ];
+      const idx = Math.min(
+        conversationHistory.filter(m => m.role === "assistant").length,
+        fallbacks.length - 1
+      );
+      const reply = fallbacks[idx];
+      conversationHistory.push({ role: "assistant", content: reply });
+      return reply;
+    }
+  }
+
+  function addMessage(type, text) {
+    const msgs = document.getElementById("callChatMessages");
+    if (!msgs) return;
+    const div = document.createElement("div");
+    const cleanText = text.replace("[CALL_END]", "").trim();
+    div.className = `call-msg call-msg-${type}`;
+    div.textContent = cleanText;
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  function addAgentTyping() {
+    const msgs = document.getElementById("callChatMessages");
+    if (!msgs) return;
+    const div = document.createElement("div");
+    div.className = "call-msg call-msg-typing";
+    div.id = "typingIndicator";
+    div.innerHTML = '<div class="typing-dots"><span></span><span></span><span></span></div>';
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  function removeTyping() {
+    const t = document.getElementById("typingIndicator");
+    if (t) t.remove();
+  }
+
+  function handleCallEnd() {
+    callEnded = true;
+    clearInterval(callDurationTimer);
+
+    const inputRow = document.getElementById("callInputRow");
+    if (inputRow) inputRow.style.display = "none";
+
+    setTimeout(() => {
+      // Show "Call Ended" overlay
+      const msgs = document.getElementById("callChatMessages");
+      if (msgs) {
+        const endDiv = document.createElement("div");
+        endDiv.style.cssText = "text-align:center;padding:20px;color:rgba(255,255,255,0.4);font-family:Poppins,sans-serif;font-size:12px;";
+        endDiv.innerHTML = '<i class="fa-solid fa-phone-slash" style="font-size:22px;color:#e53935;margin-bottom:8px;display:block;"></i>Call Ended';
+        msgs.appendChild(endDiv);
+        msgs.scrollTop = msgs.scrollHeight;
+      }
+      // After 2.5s, close the call and return to popup
+      setTimeout(() => endFakeCall(), 2500);
+    }, 800);
+  }
+
+  function endFakeCall() {
+    clearInterval(callDurationTimer);
+    callEnded = true;
+    const overlay = document.getElementById("fakeCallOverlay");
+    const connecting = document.getElementById("callConnecting");
+    const callActive = document.getElementById("callActive");
+    const msgs = document.getElementById("callChatMessages");
+
+    if (overlay) overlay.style.display = "none";
+    if (connecting) connecting.style.display = "flex";
+    if (callActive) callActive.style.display = "none";
+    if (msgs) msgs.innerHTML = "";
+    conversationHistory = [];
+
+    // Reset countdown
+    const countdown = document.getElementById("callCountdown");
+    const statusText = document.getElementById("callStatusText");
+    if (countdown) countdown.textContent = "5";
+    if (statusText) statusText.textContent = "Connecting...";
+
+    // Show popup again
+    if (popup) popup.style.display = "block";
+  }
 
   /* ---------- 3. HAPPY CODE 4-BOX AUTO FOCUS & PASTE ---------- */
   codeBoxes.forEach((box, index) => {
