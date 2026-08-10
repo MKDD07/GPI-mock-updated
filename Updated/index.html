@@ -1,0 +1,519 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>Choco Toffee — Signature Experience</title>
+    <meta
+      name="description"
+      content="Choco Toffee. Indulgent chocolate-covered toffee delight."
+    />
+
+    <!-- Google Fonts: Outfit & Poppins -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Poppins:wght@200;300;400;500&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- FontAwesome CDN -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    />
+
+    <!-- GSAP, Matter.js & Canvas-Confetti CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+
+    <!-- html5-qrcode scanner CDN -->
+    <script src="https://unpkg.com/html5-qrcode"></script>
+
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <!-- Fullscreen QR Code Scanner Overlay -->
+    <div id="qrScannerContainer" class="qr-scanner-container">
+      <button id="skipQrBtn" class="skip-qr-btn">
+        Skip <i class="fa-solid fa-chevron-right"></i>
+      </button>
+      <div class="qr-scanner-card">
+        <h2 class="qr-title">Scan QR Code</h2>
+        <p class="qr-subtitle">
+          Scan your campaign packaging to unlock the tasting experience.
+        </p>
+        <div id="qrReader" class="qr-reader-view"></div>
+        <div id="qrFeedback" class="qr-feedback-hint">
+          Camera access required. Scan target: "mohit"
+        </div>
+      </div>
+    </div>
+    <!-- Fullscreen Silent Loading Video Overlay -->
+    <div id="videoContainer" class="video-container">
+      <video
+        id="introVideo"
+        muted
+        playsinline
+        autoplay
+        preload="auto"
+        src="assets/video-initial.mp4"
+      ></video>
+    </div>
+
+    <!-- Choco Toffee Main Screen -->
+    <div id="mainScreen" class="main-screen">
+      <!-- Top Right Info Button -->
+      <button id="infoBtn" class="info-btn" aria-label="Information and Steps">
+        <i class="fa-solid fa-circle-info"></i>
+      </button>
+
+      <!-- Container for Matter.js Physics Canvas -->
+      <div id="matterContainer" class="matter-container"></div>
+
+      <!-- Canvas for choco toffee & golden particle burst -->
+      <canvas id="particleCanvas" class="particle-canvas"></canvas>
+
+      <!-- Premium Glassmorphism Chocolate Card Popup -->
+      <div id="popup" class="popup-card">
+        <div class="card-shimmer"></div>
+        <div class="toffee-icon-wrap">
+          <div class="icon-glow"></div>
+          <img
+            src="assets/packet.png"
+            alt="Choco Toffee"
+            class="toffee-img"
+            onerror="
+              this.style.display = 'none';
+              this.nextElementSibling.style.display = 'flex';
+            "
+          />
+          <span class="toffee-fallback" style="display: none"></span>
+        </div>
+
+        <span class="popup-badge">EXCLUSIVITY UNLOCKED</span>
+        <h1 class="popup-title">SPECIAL GIFT</h1>
+        <p class="popup-subtitle">
+          Thank you for choosing our signature Choco Toffee.
+        </p>
+
+        <div class="reward-card">
+          <div class="reward-card-glow"></div>
+          <div class="reward-content">
+            <p class="reward-text">
+              Complimentary Reward:<br />
+              <strong class="reward-highlight">1x Signature Choco Toffee</strong>
+            </p>
+          </div>
+        </div>
+
+        <div class="question-box">
+          <p class="question-text">Have you received your product?</p>
+          <div class="button-group">
+            <button class="btn-option btn-yes" id="btnYes">
+              <span>Yes, I got it</span>
+            </button>
+            <button class="btn-option btn-no" id="btnNo">
+              <span>Not yet</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Retailer Claim Prompt Card (Rendered in same location as popup-card) -->
+      <div id="retailerDrawer" class="popup-card retailer-card-panel">
+        <div class="card-shimmer"></div>
+        <button
+          id="closeRetailerBtn"
+          class="close-drawer-btn"
+          aria-label="Close Panel"
+        >
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+
+        <div class="retailer-header">
+          <div class="retailer-gift-icon">
+            <i class="fa-solid fa-gift"></i>
+          </div>
+          <h2>Ask Your Retailer</h2>
+          <p>
+            Please check with your store merchant or seller to claim the Choco
+            Toffee reward you received.
+          </p>
+        </div>
+
+        <button
+          id="retailerGotItBtn"
+          class="btn-option btn-yes submit-redemption-btn"
+        >
+          I Understand
+        </button>
+      </div>
+
+      <!-- Happy Code Redemption Panel Card (Rendered in same location as popup-card) -->
+      <div id="redemptionDrawer" class="popup-card redemption-card-panel">
+        <div class="card-shimmer"></div>
+        <button
+          id="closeDrawerBtn"
+          class="close-drawer-btn"
+          aria-label="Close Panel"
+        >
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+
+        <div class="drawer-header">
+          <h2>Redeem Happy Code</h2>
+          <p>Enter your details below to claim your reward instantly</p>
+        </div>
+
+        <form
+          id="redemptionForm"
+          onsubmit="return false;"
+          class="redemption-form"
+        >
+          <!-- Customer Name Field -->
+          <div class="form-group">
+            <label for="nameInput">Enter Customer Name</label>
+            <div class="input-wrapper">
+              <i class="fa-solid fa-user input-icon"></i>
+              <input type="text" id="nameInput" placeholder="Name" required />
+            </div>
+          </div>
+
+          <!-- Mobile Number Field -->
+          <div class="form-group">
+            <label for="mobileInput">Enter Customer Mobile No.</label>
+            <div class="input-wrapper">
+              <i class="fa-solid fa-mobile-screen input-icon"></i>
+              <input
+                type="tel"
+                id="mobileInput"
+                placeholder="10-digit Mobile Number"
+                maxlength="10"
+                pattern="^[6-9]\d{9}$"
+                title="Please enter a valid 10-digit mobile number"
+                required
+              />
+            </div>
+          </div>
+
+          <!-- Happy Code Field -->
+          <div class="form-group">
+            <label>Enter Happy Code</label>
+            <div class="happy-code-container" id="happyCodeContainer">
+              <input
+                type="text"
+                class="code-box"
+                maxlength="1"
+                inputmode="numeric"
+                pattern="[0-9]*"
+                required
+              />
+              <input
+                type="text"
+                class="code-box"
+                maxlength="1"
+                inputmode="numeric"
+                pattern="[0-9]*"
+                required
+              />
+              <input
+                type="text"
+                class="code-box"
+                maxlength="1"
+                inputmode="numeric"
+                pattern="[0-9]*"
+                required
+              />
+              <input
+                type="text"
+                class="code-box"
+                maxlength="1"
+                inputmode="numeric"
+                pattern="[0-9]*"
+                required
+              />
+            </div>
+          </div>
+
+          <!-- Checkbox 1 -->
+          <div class="checkbox-group">
+            <label class="custom-checkbox">
+              <input type="checkbox" id="chkSmoker" required />
+              <span class="checkmark"></span>
+              <span class="checkbox-label">
+                I hereby confirm that I am a smoker and 18 years of age or
+                older. I also consent to the company using my data for
+                future-related purposes. Read our
+                <a href="#" id="termsLink">Terms & Conditions</a>.
+              </span>
+            </label>
+          </div>
+
+          <!-- Checkbox 2 -->
+          <div class="checkbox-group">
+            <label class="custom-checkbox">
+              <input type="checkbox" id="chkUpi" required />
+              <span class="checkmark"></span>
+              <span class="checkbox-label">
+                I hereby consent to the retrieval and verification of my UPI ID
+                linked to my registered mobile number for transaction purposes.
+              </span>
+            </label>
+          </div>
+
+          <!-- Submit Button -->
+          <button
+            type="submit"
+            id="submitRedemptionBtn"
+            class="btn-option btn-yes submit-redemption-btn"
+          >
+            Submit Redemption
+          </button>
+        </form>
+      </div>
+
+      <!-- Success Redemption Panel Card (Rendered in same location as popup-card) -->
+      <div id="successDrawer" class="popup-card success-card-panel">
+        <div class="card-shimmer"></div>
+
+        <h1 class="popup-title">Congratulations!</h1>
+        <p class="popup-subtitle">
+          You've unlocked an exclusive Choco Toffee tasting experience.
+        </p>
+
+        <div class="retail-outlet-card">
+          <span class="outlet-label">Retail Outlet</span>
+          <h3 class="outlet-name">SUROOR PAN</h3>
+        </div>
+
+        <p class="claim-message-text">
+          Show this screen to the retailer to claim your complimentary Choco Toffee.
+        </p>
+
+        <!-- Interactive Scratch Card Section -->
+        <div class="scratch-card-wrapper">
+          <span class="code-title">Scratch to Avail Award</span>
+          <div class="scratch-card-container" id="scratchContainer">
+            <!-- Hidden Secret Code Underneath -->
+            <div class="scratch-secret-content">
+              <span id="uniqueCodeText" class="code-text">TOFFEE-XXXX</span>
+              <button
+                id="copyCodeBtn"
+                class="copy-code-btn"
+                aria-label="Copy Code"
+              >
+                <i class="fa-regular fa-copy"></i>
+              </button>
+            </div>
+            <!-- Canvas Overlay that gets scratched off -->
+            <canvas id="scratchCanvas" class="scratch-canvas"></canvas>
+          </div>
+          <p class="code-instruction-text">
+            Scratch the gold card above to reveal your code & show to retailer!
+          </p>
+        </div>
+
+        <button
+          id="successContinueBtn"
+          class="btn-option btn-yes submit-redemption-btn"
+        >
+          Continue
+        </button>
+      </div>
+
+      <!-- Follow Us & Rating Social Modal Card -->
+      <div id="socialRatingModal" class="popup-card social-rating-card-panel" style="display: none;">
+        <div class="card-shimmer"></div>
+        <button
+          id="closeSocialRatingBtn"
+          class="close-drawer-btn"
+          aria-label="Close Panel"
+        >
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+
+        <div class="social-modal-header">
+          <div class="social-icon-badge">
+            <i class="fa-solid fa-heart"></i>
+          </div>
+          <h2 class="social-modal-title">Join Our Community</h2>
+          <p class="social-modal-subtitle">
+            Rate your tasting experience & follow us on social media for exclusive monthly rewards!
+          </p>
+        </div>
+
+        <!-- Star Rating Section -->
+        <div class="rating-section">
+          <span class="rating-label">Rate Your Experience</span>
+          <div class="star-rating-wrap" id="starRatingWrap">
+            <i class="fa-solid fa-star star-btn" data-value="1"></i>
+            <i class="fa-solid fa-star star-btn" data-value="2"></i>
+            <i class="fa-solid fa-star star-btn" data-value="3"></i>
+            <i class="fa-solid fa-star star-btn" data-value="4"></i>
+            <i class="fa-solid fa-star star-btn" data-value="5"></i>
+          </div>
+          <span id="ratingFeedbackText" class="rating-feedback-text">Tap a star to rate</span>
+        </div>
+
+        <!-- Social Media Icons Follow Section -->
+        <div class="social-follow-section">
+          <span class="social-label">Follow Us</span>
+          <div class="social-icons-grid">
+            <a href="https://instagram.com" target="_blank" class="social-icon-btn social-ig" title="Instagram">
+              <i class="fa-brands fa-instagram"></i>
+              <span>Instagram</span>
+            </a>
+            <a href="https://facebook.com" target="_blank" class="social-icon-btn social-fb" title="Facebook">
+              <i class="fa-brands fa-facebook-f"></i>
+              <span>Facebook</span>
+            </a>
+            <a href="https://youtube.com" target="_blank" class="social-icon-btn social-yt" title="YouTube">
+              <i class="fa-brands fa-youtube"></i>
+              <span>YouTube</span>
+            </a>
+            <a href="https://x.com" target="_blank" class="social-icon-btn social-x" title="Twitter / X">
+              <i class="fa-brands fa-x-twitter"></i>
+              <span>X</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Quick Information Card -->
+        <div class="social-info-box">
+          <i class="fa-solid fa-gift text-gold me-2"></i>
+          <span>Tag <strong>#ChocoToffeeTasting</strong> on Instagram for a chance to win 1 Year Free Supply!</span>
+        </div>
+
+        <button
+          id="socialDoneBtn"
+          class="btn-option btn-yes submit-redemption-btn"
+        >
+          CLOSE
+        </button>
+      </div>
+
+      <!-- Already Participated Warning Popup Card (Rendered in same location as popup-card) -->
+      <div id="participatedModal" class="popup-card participated-card-panel">
+        <div class="card-shimmer"></div>
+        <button
+          id="closeWarningBtn"
+          class="close-drawer-btn"
+          aria-label="Close Panel"
+        >
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+
+        <div class="warning-header">
+          <div class="warning-icon-wrap">😔</div>
+          <h2>Already Redeemed</h2>
+          <p class="warning-large-text">
+            You have already participated in this campaign!
+          </p>
+
+          <!-- Redemption metadata layout segment -->
+          <div class="redemption-meta-box">
+            <div class="meta-row">
+              <span class="meta-label">Redeemed Date:</span>
+              <span id="warnRedeemDate" class="meta-val">30-Jul-2026</span>
+            </div>
+            <div class="meta-row">
+              <span class="meta-label">Redemption ID:</span>
+              <span id="warnRedeemCode" class="meta-val">LUV-X7H9K</span>
+            </div>
+            <div class="meta-row status-row">
+              <span class="meta-label">Reset Status:</span>
+              <span id="warnResetTimer" class="meta-val highlight-val"
+                >Resets in 28 Days</span
+              >
+            </div>
+          </div>
+          <p class="frequency-limit-hint">
+            Campaign Limit: Max twice (2x) per 30 days (1 month).
+          </p>
+        </div>
+
+        <button
+          id="warningGotItBtn"
+          class="btn-option btn-yes submit-redemption-btn"
+        >
+          I Understand
+        </button>
+      </div>
+    </div>
+
+    <!-- Steps Modal Overlay -->
+    <div id="stepsModal" class="steps-modal" aria-hidden="true">
+      <div class="steps-modal-backdrop" id="stepsModalBackdrop"></div>
+      <div class="steps-modal-card">
+        <button id="closeStepsBtn" class="close-steps-btn" aria-label="Close">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+
+        <div class="steps-header">
+          <i class="fa-solid fa-list-check steps-header-icon"></i>
+          <h2>How It Works</h2>
+          <p>Follow these quick steps to claim your reward</p>
+        </div>
+
+        <div class="steps-list">
+  <div class="step-item">
+    <div class="step-number">1</div>
+    <div class="step-content">
+      <h3>Scan the QR Code</h3>
+      <p>
+        Scan the QR code on your Choco Toffee pack to access the cashback
+        registration page.
+      </p>
+    </div>
+  </div>
+
+  <div class="step-item">
+    <div class="step-number">2</div>
+    <div class="step-content">
+      <h3>Enter Your Details</h3>
+      <p>
+        Provide your full name and mobile number to generate a unique
+        verification code.
+      </p>
+    </div>
+  </div>
+
+  <div class="step-item">
+    <div class="step-number">3</div>
+    <div class="step-content">
+      <h3>Share the Verification Code</h3>
+      <p>
+        Show the generated verification code to the shopkeeper for quick
+        validation of your purchase.
+      </p>
+    </div>
+  </div>
+
+  <div class="step-item">
+    <div class="step-number">4</div>
+    <div class="step-content">
+      <h3>Receive Instant Cashback</h3>
+      <p>
+        Once your code is verified, your cashback is processed instantly and
+        credited as per the offer terms.
+      </p>
+    </div>
+  </div>
+</div>
+
+        <button id="gotItBtn" class="btn-option btn-yes modal-got-it-btn">
+          Got It!
+        </button>
+      </div>
+    </div>
+
+    <link rel="stylesheet" href="retailer.css" />
+    <script src="main.js"></script>
+    <script src="nav-fab.js"></script>
+  </body>
+</html>
