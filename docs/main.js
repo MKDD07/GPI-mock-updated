@@ -1061,9 +1061,24 @@ document.addEventListener("DOMContentLoaded", () => {
       const issues = Array.from(checked).map(c => c.value);
       playClickSound();
 
-      // Close retailer drawer and show call notification immediately
+      // Close retailer drawer immediately
       if (retailerDrawer) retailerDrawer.style.display = "none";
-      startFakeCall(issues);
+      if (popup) popup.style.display = "block";
+
+      // Show "will call shortly" toast for 3s
+      const callDelayToast = document.createElement("div");
+      callDelayToast.className = "toast-notification";
+      callDelayToast.style.cssText = "background:rgba(28,28,30,0.95);border:1px solid rgba(255,255,255,0.08);";
+      callDelayToast.innerHTML = '<i class="fa-solid fa-phone-volume" style="color:#30d158"></i>&nbsp; Report submitted! Choco Toffee Support will call you in 5 seconds...';
+      document.body.appendChild(callDelayToast);
+      setTimeout(() => callDelayToast.classList.add("show"), 50);
+      setTimeout(() => {
+        callDelayToast.classList.remove("show");
+        setTimeout(() => callDelayToast.remove(), 400);
+      }, 3500);
+
+      // After 5s delay, show the iOS incoming call banner
+      setTimeout(() => startFakeCall(issues), 5000);
     });
   }
 
@@ -1394,78 +1409,60 @@ When ending the call, include [CALL_END] at the very end of your final message.`
       conversationHistory.push({ role: "user", content: userMessage });
     }
 
-    // Try Cloudflare Worker Proxy first
-    try {
-      const response = await fetch(GROQ_CF_ENDPOINT, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "llama-3.3-70b-versatile",
-          messages: conversationHistory,
-          max_tokens: 100,
-          temperature: 0.7
-        })
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        const reply = data.choices?.[0]?.message?.content || "I understand. Let me note that for you.";
-        conversationHistory.push({ role: "assistant", content: reply });
-        console.log("🟢 Groq API response via Cloudflare Worker Proxy.");
-        return reply;
-      }
-      throw new Error("Worker API error status: " + response.status);
-    } catch (err) {
-      console.warn("⚠️ Groq Cloudflare Worker Proxy failed or offline:", err.message);
-
-      // Fallback: Try direct browser-to-Groq request using localStorage API key
-      const localKey = localStorage.getItem("GROQ_API_KEY");
+    // Prioritize direct local API Key for testing
+    let localKey = localStorage.getItem("GROQ_API_KEY");
+    if (!localKey || !localKey.trim()) {
+      localKey = prompt("Please enter your Groq API Key (gsk_...) to activate real-time voice IVR. (Press cancel to use offline script):");
       if (localKey && localKey.trim()) {
-        try {
-          console.log("🔄 Attempting direct connection to Groq API using localStorage GROQ_API_KEY...");
-          const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${localKey.trim()}`
-            },
-            body: JSON.stringify({
-              model: "llama-3.3-70b-versatile",
-              messages: conversationHistory,
-              max_tokens: 100,
-              temperature: 0.7
-            })
-          });
-
-          if (response.ok) {
-            const data = await response.json();
-            const reply = data.choices?.[0]?.message?.content || "I understand. Let me note that for you.";
-            conversationHistory.push({ role: "assistant", content: reply });
-            console.log("🟢 Direct Groq API connection successful!");
-            return reply;
-          }
-          console.error("🔴 Direct Groq API failed with status:", response.status);
-        } catch (directErr) {
-          console.error("🔴 Direct Groq API request failed:", directErr);
-        }
+        localStorage.setItem("GROQ_API_KEY", localKey.trim());
       }
-
-      // Offline scripted fallbacks
-      console.log("ℹ️ Using offline fallback support script.");
-      const fallbacks = [
-        "Hello! I'm Priya from Choco Toffee Support. I'm sorry to hear you had trouble claiming your reward. Could you tell me the name of the retailer?",
-        "I understand. That's definitely something we want to look into. Was this your first time visiting this store?",
-        "Got it. We've registered your complaint and our team will follow up with the retailer shortly.",
-        "Thank you so much for bringing this to our attention. Thank you for calling Choco Toffee Support. We'll resolve this for you. Have a great day! [CALL_END]"
-      ];
-      const idx = Math.min(
-        conversationHistory.filter(m => m.role === "assistant").length,
-        fallbacks.length - 1
-      );
-      const reply = fallbacks[idx];
-      conversationHistory.push({ role: "assistant", content: reply });
-      return reply;
     }
+
+    if (localKey && localKey.trim()) {
+      try {
+        console.log("🔄 Attempting direct connection to Groq API using local GROQ_API_KEY...");
+        const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${localKey.trim()}`
+          },
+          body: JSON.stringify({
+            model: "llama-3.3-70b-versatile",
+            messages: conversationHistory,
+            max_tokens: 100,
+            temperature: 0.7
+          })
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const reply = data.choices?.[0]?.message?.content || "I understand. Let me note that for you.";
+          conversationHistory.push({ role: "assistant", content: reply });
+          console.log("🟢 Direct Groq API connection successful!");
+          return reply;
+        }
+        console.error("🔴 Direct Groq API failed with status:", response.status);
+      } catch (directErr) {
+        console.error("🔴 Direct Groq API request failed:", directErr);
+      }
+    }
+
+    // Offline scripted fallbacks
+    console.log("ℹ️ Using offline fallback support script.");
+    const fallbacks = [
+      "Hello! I'm Priya from Choco Toffee Support. I'm sorry to hear you had trouble claiming your reward. Could you tell me the name of the retailer?",
+      "I understand. That's definitely something we want to look into. Was this your first time visiting this store?",
+      "Got it. We've registered your complaint and our team will follow up with the retailer shortly.",
+      "Thank you so much for bringing this to our attention. Thank you for calling Choco Toffee Support. We'll resolve this for you. Have a great day! [CALL_END]"
+    ];
+    const idx = Math.min(
+      conversationHistory.filter(m => m.role === "assistant").length,
+      fallbacks.length - 1
+    );
+    const reply = fallbacks[idx];
+    conversationHistory.push({ role: "assistant", content: reply });
+    return reply;
   }
 
   function speakText(text, onDone) {
