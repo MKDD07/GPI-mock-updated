@@ -1,83 +1,125 @@
-/**
- * Cloudflare Worker: Groq API Proxy for Choco Toffee Support Call
- * 
- * Deploy steps:
- * 1. Go to https://dash.cloudflare.com/ → Workers → Create a Worker
- * 2. Paste this code in the editor
- * 3. Go to Settings → Variables → Add Secret: GROQ_API_KEY = your_groq_key
- * 4. Deploy and copy the worker URL
- * 5. Update GROQ_CF_ENDPOINT in docs/main.js with: https://your-worker.workers.dev/api/chat
- *
- * To get a free Groq API key: https://console.groq.com/
- */
-
 export default {
   async fetch(request, env) {
-    // Handle CORS preflight
+    const url = new URL(request.url);
+
+    // 1. Handle API Chat proxy
+    if (request.method === "POST" && url.pathname === "/api/chat") {
+      const corsHeaders = {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type",
+        "Content-Type": "application/json",
+      };
+
+      let body;
+      try {
+        body = await request.json();
+      } catch {
+        return new Response(JSON.stringify({ error: "Invalid JSON" }), {
+          status: 400,
+          headers: corsHeaders,
+        });
+      }
+
+      if (!body.messages || !Array.isArray(body.messages)) {
+        return new Response(JSON.stringify({ error: "messages array required" }), {
+          status: 400,
+          headers: corsHeaders,
+        });
+      }
+
+      const apiKey = env.GROQ_API_KEY;
+      if (!apiKey) {
+        return new Response(JSON.stringify({ error: "GROQ_API_KEY secret is not set in Cloudflare." }), {
+          status: 500,
+          headers: corsHeaders,
+        });
+      }
+
+      try {
+        const groqResponse = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${apiKey.trim()}`,
+          },
+          body: JSON.stringify({
+            model: body.model || "llama-3.3-70b-versatile",
+            messages: body.messages,
+            max_tokens: body.max_tokens || 100,
+            temperature: body.temperature || 0.7,
+            stream: false,
+          }),
+        });
+
+        const data = await groqResponse.json();
+
+        return new Response(JSON.stringify(data), {
+          status: groqResponse.status,
+          headers: {
+            ...corsHeaders,
+            "Cache-Control": "no-store",
+          },
+        });
+      } catch (err) {
+        return new Response(JSON.stringify({ error: "Failed to connect to Groq API: " + err.message }), {
+          status: 502,
+          headers: corsHeaders,
+        });
+      }
+    }
+
     if (request.method === "OPTIONS") {
       return new Response(null, {
         headers: {
           "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "POST, OPTIONS",
+          "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
           "Access-Control-Allow-Headers": "Content-Type",
         },
       });
     }
 
-    const url = new URL(request.url);
-
-    // Only allow POST /api/chat
-    if (request.method !== "POST" || url.pathname !== "/api/chat") {
-      return new Response(JSON.stringify({ error: "Not found" }), {
-        status: 404,
-        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
-      });
+    // 2. Fetch static assets from GitHub Raw repository
+    let path = url.pathname;
+    if (path === "/" || path === "") {
+      path = "/index.html";
     }
 
-    // Parse the incoming request body
-    let body;
+    // Map content types based on file extension
+    const contentTypes = {
+      ".html": "text/html; charset=utf-8",
+      ".css": "text/css; charset=utf-8",
+      ".js": "application/javascript; charset=utf-8",
+      ".png": "image/png",
+      ".jpg": "image/jpeg",
+      ".jpeg": "image/jpeg",
+      ".svg": "image/svg+xml",
+      ".mp4": "video/mp4",
+      ".mp3": "audio/mpeg",
+    };
+
+    const dotIndex = path.lastIndexOf(".");
+    const ext = dotIndex !== -1 ? path.substring(dotIndex).toLowerCase() : "";
+    const contentType = contentTypes[ext] || "text/plain";
+
+    // Github raw base URL (using main branch)
+    const githubRawUrl = `https://raw.githubusercontent.com/MKDD07/GPI-mock-updated/main/docs${path}`;
+
     try {
-      body = await request.json();
-    } catch {
-      return new Response(JSON.stringify({ error: "Invalid JSON" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
-      });
+      const response = await fetch(githubRawUrl);
+      if (response.ok) {
+        return new Response(response.body, {
+          status: 200,
+          headers: {
+            "Content-Type": contentType,
+            "Access-Control-Allow-Origin": "*",
+            "Cache-Control": "public, max-age=0, must-revalidate",
+          },
+        });
+      }
+      return new Response("Asset not found on GitHub: " + path, { status: 404 });
+    } catch (err) {
+      return new Response("Error fetching asset: " + err.message, { status: 500 });
     }
-
-    // Validate required fields
-    if (!body.messages || !Array.isArray(body.messages)) {
-      return new Response(JSON.stringify({ error: "messages array required" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
-      });
-    }
-
-    // Forward to Groq API with server-side API key
-    const groqResponse = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${env.GROQ_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: body.model || "llama3-8b-8192",
-        messages: body.messages,
-        max_tokens: body.max_tokens || 150,
-        temperature: body.temperature || 0.7,
-        stream: false,
-      }),
-    });
-
-    const data = await groqResponse.json();
-
-    return new Response(JSON.stringify(data), {
-      status: groqResponse.status,
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-        "Cache-Control": "no-store",
-      },
-    });
   },
 };
