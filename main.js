@@ -1430,7 +1430,9 @@ When ending the call, include [CALL_END] at the very end of your final message.`
         console.log("🟢 Groq API response via Cloudflare Worker Proxy successful!");
         return reply;
       }
-      throw new Error("Worker API error status: " + response.status);
+      const errText = await response.text();
+      console.error("❌ Worker Response Error Details:", errText);
+      throw new Error(`Worker API error status ${response.status}: ${errText}`);
     } catch (err) {
       console.warn("⚠️ Groq Cloudflare Worker Proxy failed or offline:", err.message);
 
