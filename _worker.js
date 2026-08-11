@@ -5,9 +5,13 @@ export default {
     // Dynamic API Endpoint for Chat / Groq Proxy
     if (url.pathname === "/api/chat" && request.method === "POST") {
       try {
-        const apiKey = env.GROQ_API_KEY;
+        // Fallback check across possible environment object properties
+        const apiKey = env.GROQ_API_KEY || (typeof GROQ_API_KEY !== "undefined" ? GROQ_API_KEY : null);
         if (!apiKey) {
-          return new Response(JSON.stringify({ error: "GROQ_API_KEY environment variable missing on worker" }), {
+          return new Response(JSON.stringify({ 
+            error: "GROQ_API_KEY environment variable missing on worker",
+            availableKeys: Object.keys(env || {})
+          }), {
             status: 500,
             headers: { "Content-Type": "application/json" }
           });
