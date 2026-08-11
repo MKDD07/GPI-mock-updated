@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>Adomantra — Retailer Basic Dashboard</title>
+
+    <!-- Google Fonts: Outfit & Poppins -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- FontAwesome CDN -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    />
+
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="retailer.css" />
+  </head>
+  <body>
+
+    <!-- Minimal Basic Retailer Dashboard Screen -->
+    <div id="retailerDashboardScreen" class="dash-screen" style="display: flex;">
+
+      <!-- Top Navbar -->
+      <header class="dash-topbar">
+        <div class="dash-topbar-left">
+          <img src="assets/logo-toffee.png" alt="Choco Toffee" class="dash-topbar-logo" onerror="this.src='assets/toffee.png'" />
+          <span class="dash-profile-name" style="font-size: 14px; font-weight: 500; color: #f5f0e8;">Retailer Basic Portal</span>
+        </div>
+        <div class="dash-topbar-right">
+          <div class="dash-profile-chip">
+            <div class="dash-profile-avatar">
+              <i class="fa-solid fa-store"></i>
+            </div>
+            <div class="dash-profile-info">
+              <span id="dashMerchantName" class="dash-profile-name">Retailer Merchant</span>
+              <span id="dashSfaId" class="dash-profile-sfa">SFA-104829</span>
+            </div>
+          </div>
+          <button type="button" id="dashLogoutBtn" class="dash-logout-btn" title="Exit Dashboard">
+            <i class="fa-solid fa-right-from-bracket"></i>
+          </button>
+        </div>
+      </header>
+
+      <!-- Main Minimal Content Area -->
+      <main class="dash-main" style="margin-left: 0; padding: 24px 16px;">
+        <div style="max-width: 1200px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 20px;">
+          
+          <!-- Campaign Promo Header -->
+          <div class="dash-overview-promo">
+            <img src="assets/toffee.png" alt="Toffee Pack" class="dash-overview-promo-img" />
+            <div class="dash-overview-promo-text">
+              <strong class="dash-overview-promo-title">Choco Toffee Campaign</strong>
+              <span class="dash-overview-promo-sub">1x Free Choco Toffee Pack per customer redemption claim</span>
+            </div>
+          </div>
+
+          <!-- Minimal KPI Cards Grid -->
+          <div class="dash-kpi-grid">
+            <div class="dash-kpi-card">
+              <div class="dash-kpi-icon dash-kpi-icon--gold">
+                <i class="fa-solid fa-rotate-right"></i>
+              </div>
+              <div class="dash-kpi-data">
+                <span class="dash-kpi-label">Total Trails Done Till Now</span>
+                <strong class="dash-kpi-value">2 <small>trails</small></strong>
+              </div>
+            </div>
+            <div class="dash-kpi-card">
+              <div class="dash-kpi-icon dash-kpi-icon--green">
+                <i class="fa-solid fa-indian-rupee-sign"></i>
+              </div>
+              <div class="dash-kpi-data">
+                <span class="dash-kpi-label">Total Amount Earned Till Now</span>
+                <strong class="dash-kpi-value">₹40</strong>
+              </div>
+            </div>
+            <div class="dash-kpi-card">
+              <div class="dash-kpi-icon dash-kpi-icon--brown">
+                <i class="fa-solid fa-hourglass-half"></i>
+              </div>
+              <div class="dash-kpi-data">
+                <span class="dash-kpi-label">Trail Left</span>
+                <strong class="dash-kpi-value">38 <small>remaining</small></strong>
+              </div>
+            </div>
+          </div>
+
+          <!-- Customer Claim List Card (Basic Showcase) -->
+          <div class="dash-card">
+            <div class="dash-card-header">
+              <div>
+                <h3 class="dash-card-title">Customer Claim Records</h3>
+                <p class="dash-card-sub">Recent customer claim transactions and UPI settlements</p>
+              </div>
+              <div class="dash-search-box">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="dashCustomerSearchInput" placeholder="Search customer, mobile, code..." />
+              </div>
+            </div>
+            <div id="dashCustomerList" class="dash-cust-list">
+              <!-- Dynamically populated via retailer-basic.js -->
+            </div>
+          </div>
+
+        </div>
+      </main>
+    </div>
+
+    <!-- 1. Customer Offer Detail Modal Popup -->
+    <div id="customerOfferModalOverlay" class="dash-modal-overlay">
+      <div class="dash-modal-card">
+        <button type="button" id="closeCustomerOfferModalBtn" class="dash-modal-close">&times;</button>
+        <div class="dash-modal-header">
+          <img src="assets/logo-toffee.png" alt="Choco Toffee Logo" class="dash-modal-logo" onerror="this.src='assets/toffee.png'" />
+          <h3 id="offerModalCustomerName" class="dash-modal-name">Mohit Sharma</h3>
+          <span id="offerModalCustomerMobile" class="dash-modal-mobile">Mobile: 7206611307</span>
+        </div>
+        <div class="dash-modal-body">
+          <div class="dash-modal-row">
+            <span class="dash-modal-label"><i class="fa-regular fa-user"></i> Complete Name</span>
+            <span id="offerModalFullName" class="dash-modal-val">Mohit Sharma</span>
+          </div>
+          <div class="dash-modal-row">
+            <span class="dash-modal-label"><i class="fa-solid fa-wallet"></i> Settlement UPI ID</span>
+            <span id="offerModalUpiId" class="dash-modal-val dash-mono">BHARATPE.900687@fbpe</span>
+          </div>
+          <div class="dash-modal-row">
+            <span class="dash-modal-label"><i class="fa-solid fa-ticket"></i> Happy Code</span>
+            <span id="offerModalHappyCode" class="dash-badge dash-badge--dark">7892</span>
+          </div>
+          <div class="dash-modal-row">
+            <span class="dash-modal-label"><i class="fa-regular fa-clock"></i> Claimed Date &amp; Time</span>
+            <span id="offerModalClaimTime" class="dash-modal-val">10:42 AM Today</span>
+          </div>
+          <div class="dash-modal-row">
+            <span class="dash-modal-label"><i class="fa-regular fa-calendar-check"></i> Offer Valid Until</span>
+            <span id="offerModalValidDate" class="dash-modal-val dash-text-gold">31 Aug 2026</span>
+          </div>
+          <div class="dash-modal-row">
+            <span class="dash-modal-label"><i class="fa-solid fa-gift"></i> Available Offer</span>
+            <span id="offerModalOfferTitle" class="dash-modal-val dash-text-green">20% Cashback + Bonus Toffee</span>
+          </div>
+          <div class="dash-modal-row">
+            <span class="dash-modal-label"><i class="fa-solid fa-barcode"></i> Promo Voucher Code</span>
+            <span id="offerModalOfferCode" class="dash-badge dash-badge--gold">CHOCO-GOLD-77</span>
+          </div>
+        </div>
+        <button type="button" id="closeOfferModalDoneBtn" class="dash-btn dash-btn--gold dash-modal-btn">
+          DONE &amp; CLOSE
+        </button>
+      </div>
+    </div>
+
+    <!-- 2. OTP Verification Modal Popup -->
+    <div id="otpModalOverlay" class="dash-modal-overlay">
+      <div class="dash-modal-card" style="max-width: 400px; text-align: center;">
+        <button type="button" id="closeOtpModalBtn" class="dash-modal-close">&times;</button>
+        <div class="dash-modal-header">
+          <div class="modal-icon-badge" style="background: rgba(201,162,39,0.12); width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px auto; color: #c9a227; font-size: 24px;">
+            <i class="fa-solid fa-shield-halved"></i>
+          </div>
+          <h3 class="dash-modal-name">Verify Retailer OTP</h3>
+          <span class="dash-modal-mobile">Enter 4-digit code sent to your registered mobile</span>
+        </div>
+        <div style="display: flex; gap: 12px; justify-content: center; margin: 20px 0;">
+          <input type="text" maxlength="1" class="dash-form-input" style="width: 48px; text-align: center; font-size: 20px; font-weight: 600;" value="7" />
+          <input type="text" maxlength="1" class="dash-form-input" style="width: 48px; text-align: center; font-size: 20px; font-weight: 600;" value="8" />
+          <input type="text" maxlength="1" class="dash-form-input" style="width: 48px; text-align: center; font-size: 20px; font-weight: 600;" value="9" />
+          <input type="text" maxlength="1" class="dash-form-input" style="width: 48px; text-align: center; font-size: 20px; font-weight: 600;" value="2" />
+        </div>
+        <button type="button" id="confirmOtpBtn" class="dash-btn dash-btn--gold dash-modal-btn">
+          VERIFY &amp; CONFIRM
+        </button>
+      </div>
+    </div>
+
+    <!-- 3. Stock Re-Stock Request Modal Popup -->
+    <div id="restockModalOverlay" class="dash-modal-overlay">
+      <div class="dash-modal-card" style="max-width: 420px;">
+        <button type="button" id="closeRestockModalBtn" class="dash-modal-close">&times;</button>
+        <div class="dash-modal-header" style="text-align: center;">
+          <h3 class="dash-modal-name"><i class="fa-solid fa-truck-ramp-box" style="color: #c9a227; margin-right: 8px;"></i>Request Stock Re-Stock</h3>
+          <span class="dash-modal-mobile">Select batch variant to request additional shelf stock</span>
+        </div>
+        <div class="dash-modal-body">
+          <div class="dash-form-group">
+            <label class="dash-form-label">Product Variant</label>
+            <select class="dash-form-input">
+              <option>Signature Choco Toffee (Pack of 500)</option>
+              <option>Choco Toffee Mini (Pack of 200)</option>
+            </select>
+          </div>
+          <div class="dash-form-group">
+            <label class="dash-form-label">Requested Quantity</label>
+            <input type="number" class="dash-form-input" value="1000" placeholder="Number of packs..." />
+          </div>
+        </div>
+        <button type="button" id="confirmRestockBtn" class="dash-btn dash-btn--gold dash-modal-btn">
+          SUBMIT STOCK REQUEST
+        </button>
+      </div>
+    </div>
+
+    <script src="retailer-basic.js"></script>
+    <script src="nav-fab.js"></script>
+  </body>
+</html>

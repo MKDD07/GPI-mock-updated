@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>Adomantra — Retailer Journey</title>
+
+    <!-- Google Fonts: Outfit & Poppins -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Bootstrap 5 CSS CDN -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+
+    <!-- FontAwesome CDN -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    />
+
+    <!-- GSAP, html5-qrcode, Chart.js & Bootstrap JS CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="retailer.css" />
+  </head>
+  <body>
+    <!-- GSAP Showcase Loader Overlay (toffee.png showcase) -->
+    <div id="loaderOverlay">
+      <div class="loader-content">
+        <div class="loader-toffee-wrap">
+          <div class="loader-glow"></div>
+          <img
+            id="loaderToffee"
+            src="assets/toffee.png"
+            alt="LuvIt Eclairs Toffee"
+            class="loader-toffee-img"
+          />
+        </div>
+        <div class="loader-title">Choco Toffee</div>
+        <div class="loader-bar-bg">
+          <div id="loaderBarFill" class="loader-bar-fill"></div>
+        </div>
+      </div>
+    </div>
+    <!-- Floating Action Button (Page Navigation Shortcut) -->
+    <div class="dash-fab-container">
+      <button type="button" id="fabMainBtn" class="dash-fab-main" title="Navigate Pages">
+        <i class="fa-solid fa-layer-group"></i>
+      </button>
+      <div class="dash-fab-menu" id="fabMenu">
+        <a href="index.html" class="dash-fab-item">
+          <i class="fa-solid fa-house"></i>
+          <span>Customer Portal</span>
+        </a>
+        <a href="retailer.html" class="dash-fab-item">
+          <i class="fa-solid fa-chart-line"></i>
+          <span>Full Retailer Dashboard</span>
+        </a>
+        <a href="retailer-basic.html" class="dash-fab-item">
+          <i class="fa-solid fa-store"></i>
+          <span>Basic Retailer Dashboard</span>
+        </a>
+      </div>
+    </div>
+    <!-- Main Page Content -->
+    <div id="mainContent" style="opacity: 0;">
+
+      <!-- Top Header Navigation Bar with Direct Skip to Dashboard -->
+      <header class="top-nav-header">
+        <div class="header-logo-wrap">
+          <img src="assets/logo-toffee.png" alt="Choco Toffee" class="header-toffee-logo" onerror="this.src='assets/toffee.png'" />
+          <span class="header-title-text">Retailer Portal</span>
+        </div>
+        <button type="button" id="skipToDashboardBtn" class="btn-skip-top" title="Skip Form & Go Direct to Dashboard">
+          <span>Skip</span>
+        </button>
+      </header>
+
+      <!-- Page Container -->
+      <main class="page-container">
+        <div class="retailer-main-card">
+          <!-- Ambient Glow Background Decoration -->
+          <div class="ambient-card-glow"></div>
+          
+          <!-- Left Brand Showcase -->
+          <div class="brand-showcase">
+            <div class="brand-badge"><i class="fa-solid fa-crown"></i> RETAILER PARTNER</div>
+            <p class="brand-tagline">Signature Artisanal Choco Experience</p>
+          </div>
+
+          <!-- Right Form Grid Section -->
+          <div class="form-section">
+            <div class="form-header-title">
+              <h3>Retailer Verification & Claim</h3>
+              <p>Verify retailer credentials to issue reward confirmation</p>
+            </div>
+
+            <form onsubmit="return false;">
+              <div class="form-grid">
+                <!-- SFA ID -->
+                <div class="form-group-full">
+                  <label class="form-label">SFA ID</label>
+                  <div class="input-box">
+                    <i class="fa-solid fa-id-card input-left-icon"></i>
+                    <input
+                      type="text"
+                      id="desktopSfaInput"
+                      placeholder="e.g. SFA104829 or type store code..."
+                      required
+                    />
+                    <i class="fa-solid fa-magnifying-glass icon-right"></i>
+                  </div>
+                  <span class="input-hint-text">
+                    <i class="fa-solid fa-circle-info"></i> Enter 6-digit SFA Sales Force Automation ID or outlet code
+                  </span>
+                </div>
+
+                <!-- Outlet Name -->
+                <div>
+                  <label class="form-label">Outlet Name</label>
+                  <div class="input-box">
+                    <i class="fa-solid fa-store input-left-icon"></i>
+                    <input
+                      type="text"
+                      id="desktopOutletInput"
+                      placeholder="Enter Outlet Name"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <!-- Location -->
+                <div>
+                  <label class="form-label">Location</label>
+                  <div class="input-box">
+                    <i class="fa-solid fa-location-dot input-left-icon"></i>
+                    <input
+                      type="text"
+                      id="desktopLocationInput"
+                      placeholder="Enter Location"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <!-- UPI ID -->
+                <div>
+                  <label class="form-label">UPI ID</label>
+                  <div class="input-box">
+                    <i class="fa-solid fa-wallet input-left-icon"></i>
+                    <input
+                      type="text"
+                      id="desktopUpiInput"
+                      placeholder="Enter UPI ID"
+                      required
+                    />
+                    <button
+                      type="button"
+                      id="scanUpiQrBtn"
+                      class="btn-qr-scanner"
+                      title="Scan QR Code"
+                    >
+                      <i class="fa-solid fa-qrcode"></i>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Mobile No. -->
+                <div>
+                  <label class="form-label">Mobile No.</label>
+                  <div class="input-box">
+                    <i class="fa-solid fa-phone input-left-icon"></i>
+                    <input
+                      type="tel"
+                      id="desktopMobileInput"
+                      placeholder="Enter 10-digit mobile number"
+                      maxlength="10"
+                      pattern="[6-9][0-9]{9}"
+                      required
+                    />
+                    <button
+                      type="button"
+                      id="editMobileBtn"
+                      class="btn-inline-edit"
+                    >
+                      EDIT
+                    </button>
+                  </div>
+                  <span id="mobileErrorHint" class="input-error-hint" style="display:none;">
+                    Please fill all form details & 10-digit mobile number starting with 6, 7, 8, or 9
+                  </span>
+                </div>
+
+                <!-- CONFIRM Button -->
+                <div class="form-group-full">
+                  <button
+                    type="button"
+                    id="confirmBtnDesktop"
+                    class="btn-confirm-submit disabled-btn"
+                  >
+                    <span>CONFIRM & VERIFY</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- Modal Popup Overlay for Inbuilt Camera QR Scanner -->
+    <div id="qrScannerModalOverlay" class="modal-overlay">
+      <div class="modal-card qr-modal-card">
+        <button type="button" id="closeQrScannerBtn" class="close-qr-btn">&times;</button>
+        <div class="modal-icon-badge">
+          <i class="fa-solid fa-qrcode"></i>
+        </div>
+        <p class="modal-title">Scan UPI QR Code</p>
+        <p class="modal-sub">Position the UPI QR code inside the camera scanner frame</p>
+        <div id="retailerQrReader" class="qr-reader-view"></div>
+        <div id="qrScannerFeedback" class="qr-feedback-text">Camera scanning active...</div>
+      </div>
+    </div>
+
+    <!-- Modal 1: Confirmation Overlay -->
+    <div id="confirmModalOverlay" class="modal-overlay">
+      <div class="modal-card">
+        <div class="modal-icon-badge">
+          <i class="fa-solid fa-circle-check"></i>
+        </div>
+        <p class="modal-title">Do you confirm</p>
+        <p id="modalMobileDisplay" class="modal-mobile-number"></p>
+        <p class="modal-sub">is your mobile number?</p>
+        <button type="button" id="modalConfirmBtn" class="modal-btn-confirm">
+          CONFIRM & SEND OTP
+        </button>
+      </div>
+    </div>
+
+    <!-- Modal 2: OTP Verification Overlay -->
+    <div id="otpModalOverlay" class="modal-overlay">
+      <div class="modal-card">
+        <div class="modal-icon-badge">
+          <img src="assets/logo-toffee.png" alt="Toffee Logo" class="modal-toffee-logo-img" onerror="this.src='assets/toffee.png'" />
+        </div>
+        <p class="modal-title">Enter Verification Code</p>
+        <p class="modal-sub">An OTP code was sent to <strong id="otpMobileDisplay"></strong></p>
+        <div class="otp-input-group">
+          <input type="text" class="otp-field" maxlength="1" autofocus />
+          <input type="text" class="otp-field" maxlength="1" />
+          <input type="text" class="otp-field" maxlength="1" />
+          <input type="text" class="otp-field" maxlength="1" />
+        </div>
+        <div id="otpFeedback" class="otp-feedback-hint">Enter any 4-digit code (e.g. 1234)</div>
+        <button type="button" id="verifyOtpBtn" class="modal-btn-confirm">
+          VERIFY & SUBMIT
+        </button>
+      </div>
+    </div>
+
+    <!-- Full Retailer Analytics Dashboard (Custom White + Gold Theme — No Bootstrap) -->
+    <div id="retailerDashboardScreen" class="dash-screen" style="display: none;">
+
+      <!-- Dashboard Top Navbar -->
+      <header class="dash-topbar">
+        <div class="dash-topbar-left">
+          <button type="button" class="dash-hamburger" id="dashHamburgerBtn" title="Open Menu">
+            <i class="fa-solid fa-bars"></i>
+          </button>
+          <img src="assets/logo-toffee.png" alt="Choco Toffee" class="dash-topbar-logo" onerror="this.src='assets/toffee.png'" />
+        </div>
+        <div class="dash-topbar-right">
+          <div class="dash-profile-chip">
+            <div class="dash-profile-avatar">
+              <i class="fa-solid fa-store"></i>
+            </div>
+            <div class="dash-profile-info">
+              <span id="dashMerchantName" class="dash-profile-name">Retailer Merchant</span>
+              <span id="dashSfaId" class="dash-profile-sfa">SFA-104829</span>
+            </div>
+          </div>
+          <button type="button" id="dashLogoutBtn" class="dash-logout-btn" title="Exit Dashboard">
+            <i class="fa-solid fa-right-from-bracket"></i>
+          </button>
+        </div>
+      </header>
+
+      <!-- Mobile Sidebar Overlay Backdrop -->
+      <div class="dash-drawer-backdrop" id="dashDrawerBackdrop"></div>
+
+      <!-- Sidebar Navigation -->
+      <aside class="dash-sidebar" id="dashSidebar">
+        <div class="dash-sidebar-header">
+          <span class="dash-sidebar-label">Navigation</span>
+          <button type="button" class="dash-drawer-close" id="dashDrawerCloseBtn">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <nav class="dash-sidebar-nav">
+          <a href="#" class="dash-nav-link active dash-nav-active" data-tab-index="0">
+            <i class="fa-solid fa-chart-line"></i> Sales Overview
+          </a>
+          <a href="#" class="dash-nav-link" data-tab-index="1">
+            <i class="fa-solid fa-users"></i> Customer Claims
+          </a>
+          <a href="#" class="dash-nav-link" data-tab-index="2">
+            <i class="fa-solid fa-box-open"></i> Toffee Pack Inventory
+          </a>
+          <a href="#" class="dash-nav-link" data-tab-index="3">
+            <i class="fa-solid fa-gift"></i> Reward Payouts
+          </a>
+          <a href="#" class="dash-nav-link" data-tab-index="4">
+            <i class="fa-solid fa-gear"></i> Merchant Settings
+          </a>
+        </nav>
+      </aside>
+
+      <!-- Main Dashboard Content Area -->
+      <main class="dash-main">
+        <!-- Section Header -->
+        <div class="dash-section-header">
+          <div class="dash-section-title-wrap">
+            <h2 id="dashSectionTitle" class="dash-section-title">Toffee Sales &amp; Customer Redemption Analytics</h2>
+            <p id="dashSectionSub" class="dash-section-sub">Monitor daily toffee pack sales, customer claim details, and payouts in real-time.</p>
+          </div>
+          <span class="dash-date-badge">
+            <i class="fa-regular fa-calendar"></i> Today, Aug 03, 2026
+          </span>
+        </div>
+
+        <!-- Tab 1: Sales Overview (Default) -->
+        <div id="tabSalesOverview" class="dash-tab-pane active-pane">
+          <!-- Campaign Promo Banner -->
+          <div class="dash-overview-promo">
+            <img src="assets/toffee.png" alt="Toffee Pack" class="dash-overview-promo-img" />
+            <div class="dash-overview-promo-text">
+              <strong class="dash-overview-promo-title">Choco Toffee Campaign</strong>
+              <span class="dash-overview-promo-sub">1x Free Choco Toffee Pack per customer redemption claim</span>
+            </div>
+          </div>
+          <!-- KPI Cards Grid -->
+          <div class="dash-kpi-grid">
+            <div class="dash-kpi-card">
+              <div class="dash-kpi-icon dash-kpi-icon--gold">
+                <i class="fa-solid fa-rotate-right"></i>
+              </div>
+              <div class="dash-kpi-data">
+                <span class="dash-kpi-label">Total Trails Done Till Now</span>
+                <strong class="dash-kpi-value">2 <small>trails</small></strong>
+                <span class="dash-kpi-trend dash-kpi-trend--up"><i class="fa-solid fa-arrow-trend-up"></i> Active Campaign</span>
+              </div>
+            </div>
+            <div class="dash-kpi-card">
+              <div class="dash-kpi-icon dash-kpi-icon--green">
+                <i class="fa-solid fa-indian-rupee-sign"></i>
+              </div>
+              <div class="dash-kpi-data">
+                <span class="dash-kpi-label">Total Amount Earned Till Now</span>
+                <strong class="dash-kpi-value">₹40</strong>
+                <span class="dash-kpi-trend dash-kpi-trend--up"><i class="fa-solid fa-circle-check"></i> ₹20 Per Claim</span>
+              </div>
+            </div>
+            <div class="dash-kpi-card">
+              <div class="dash-kpi-icon dash-kpi-icon--brown">
+                <i class="fa-solid fa-hourglass-half"></i>
+              </div>
+              <div class="dash-kpi-data">
+                <span class="dash-kpi-label">Trail Left</span>
+                <strong class="dash-kpi-value">38 <small>remaining</small></strong>
+                <span class="dash-kpi-trend dash-kpi-trend--muted"><i class="fa-regular fa-clock"></i> Out of 40 Total</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sales Chart Card -->
+          <div class="dash-card">
+            <div class="dash-card-header">
+              <div>
+                <h3 class="dash-card-title">Daily Toffee Pack Sales Trend</h3>
+                <p class="dash-card-sub">Daily volume of Choco Toffee packs sold vs verified customer claims</p>
+              </div>
+              <div class="dash-filter-group">
+                <button type="button" id="chartFilterWeekly" class="dash-filter-btn active">Weekly (July)</button>
+                <button type="button" id="chartFilterMonthly" class="dash-filter-btn">Monthly (2026)</button>
+              </div>
+            </div>
+            <div class="dash-chart-wrap">
+              <canvas id="retailerSalesChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 2: Customer Claims -->
+        <div id="tabCustomerClaims" class="dash-tab-pane" style="display: none;">
+          <div class="dash-card">
+            <div class="dash-card-header">
+              <div>
+                <h3 class="dash-card-title">Customer Claim Records &amp; People Information</h3>
+                <p class="dash-card-sub">Click any customer row to view their available offer &amp; promo code details</p>
+              </div>
+              <div class="dash-search-box">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="dashCustomerSearchInput" placeholder="Search customer, mobile, code..." />
+              </div>
+            </div>
+            <div id="dashCustomerList" class="dash-cust-list">
+              <!-- Populated via JavaScript dynamically -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 3: Toffee Pack Inventory -->
+        <div id="tabInventory" class="dash-tab-pane" style="display: none;">
+          <div class="dash-kpi-grid">
+            <div class="dash-kpi-card">
+              <div class="dash-kpi-icon dash-kpi-icon--gold">
+                <i class="fa-solid fa-boxes-stacked"></i>
+              </div>
+              <div class="dash-kpi-data">
+                <span class="dash-kpi-label">Total Received Stock</span>
+                <strong class="dash-kpi-value">5,000 <small>packs</small></strong>
+                <div class="dash-progress"><div class="dash-progress-bar" style="width: 100%;"></div></div>
+              </div>
+            </div>
+            <div class="dash-kpi-card">
+              <div class="dash-kpi-icon dash-kpi-icon--green">
+                <i class="fa-solid fa-truck-fast"></i>
+              </div>
+              <div class="dash-kpi-data">
+                <span class="dash-kpi-label">Distributed / Sold</span>
+                <strong class="dash-kpi-value dash-text-green">3,482 <small>packs (69.6%)</small></strong>
+                <div class="dash-progress"><div class="dash-progress-bar dash-progress-bar--green" style="width: 69.6%;"></div></div>
+              </div>
+            </div>
+            <div class="dash-kpi-card">
+              <div class="dash-kpi-icon dash-kpi-icon--blue">
+                <i class="fa-solid fa-warehouse"></i>
+              </div>
+              <div class="dash-kpi-data">
+                <span class="dash-kpi-label">Remaining Shelf Stock</span>
+                <strong class="dash-kpi-value dash-text-blue">1,518 <small>packs</small></strong>
+                <div class="dash-progress"><div class="dash-progress-bar dash-progress-bar--blue" style="width: 30.4%;"></div></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Inventory Batches Table -->
+          <div class="dash-card">
+            <div class="dash-card-header">
+              <h3 class="dash-card-title"><i class="fa-solid fa-boxes-stacked dash-icon-gold"></i> Toffee Stock Batches &amp; Inventory Log</h3>
+              <button type="button" class="dash-btn dash-btn--outline"><i class="fa-solid fa-truck-ramp-box"></i> Request Re-Stock</button>
+            </div>
+            <div class="dash-batch-list">
+              <div class="dash-batch-card">
+                <div class="dash-batch-header-row">
+                  <div class="dash-batch-title-group">
+                    <strong class="dash-mono">#BATCH-B4082</strong>
+                    <span class="dash-batch-title">Signature Choco Toffee (Pack of 500)</span>
+                  </div>
+                  <span class="dash-badge dash-badge--green-solid">Active Batch</span>
+                </div>
+                <div class="dash-batch-body-row">
+                  <div class="dash-batch-data-item">
+                    <small>Dispatched Date</small>
+                    <span>28 Jul 2026</span>
+                  </div>
+                  <div class="dash-batch-data-item">
+                    <small>Initial Qty</small>
+                    <strong>2,000 Packs</strong>
+                  </div>
+                  <div class="dash-batch-data-item">
+                    <small>Claimed Qty</small>
+                    <strong>1,482 Packs</strong>
+                  </div>
+                  <div class="dash-batch-data-item">
+                    <small>Remaining Stock</small>
+                    <span class="dash-badge dash-badge--green">518 Left</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="dash-batch-card">
+                <div class="dash-batch-header-row">
+                  <div class="dash-batch-title-group">
+                    <strong class="dash-mono">#BATCH-B3991</strong>
+                    <span class="dash-batch-title">Signature Choco Toffee (Pack of 500)</span>
+                  </div>
+                  <span class="dash-badge dash-badge--muted-solid">Completed</span>
+                </div>
+                <div class="dash-batch-body-row">
+                  <div class="dash-batch-data-item">
+                    <small>Dispatched Date</small>
+                    <span>15 Jul 2026</span>
+                  </div>
+                  <div class="dash-batch-data-item">
+                    <small>Initial Qty</small>
+                    <strong>1,500 Packs</strong>
+                  </div>
+                  <div class="dash-batch-data-item">
+                    <small>Claimed Qty</small>
+                    <strong>1,500 Packs</strong>
+                  </div>
+                  <div class="dash-batch-data-item">
+                    <small>Remaining Stock</small>
+                    <span class="dash-badge dash-badge--muted">0 Left</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="dash-batch-card">
+                <div class="dash-batch-header-row">
+                  <div class="dash-batch-title-group">
+                    <strong class="dash-mono">#BATCH-B3820</strong>
+                    <span class="dash-batch-title">Signature Choco Toffee (Pack of 500)</span>
+                  </div>
+                  <span class="dash-badge dash-badge--muted-solid">Completed</span>
+                </div>
+                <div class="dash-batch-body-row">
+                  <div class="dash-batch-data-item">
+                    <small>Dispatched Date</small>
+                    <span>01 Jul 2026</span>
+                  </div>
+                  <div class="dash-batch-data-item">
+                    <small>Initial Qty</small>
+                    <strong>1,500 Packs</strong>
+                  </div>
+                  <div class="dash-batch-data-item">
+                    <small>Claimed Qty</small>
+                    <strong>1,500 Packs</strong>
+                  </div>
+                  <div class="dash-batch-data-item">
+                    <small>Remaining Stock</small>
+                    <span class="dash-badge dash-badge--muted">0 Left</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 4: Reward Payouts -->
+        <div id="tabPayouts" class="dash-tab-pane" style="display: none;">
+          <div class="dash-kpi-grid dash-kpi-grid--half">
+            <div class="dash-kpi-card">
+              <div class="dash-kpi-icon dash-kpi-icon--green">
+                <i class="fa-solid fa-wallet"></i>
+              </div>
+              <div class="dash-kpi-data">
+                <span class="dash-kpi-label">Total Merchant Earnings</span>
+                <strong class="dash-kpi-value">₹49,600</strong>
+                <span class="dash-kpi-trend dash-kpi-trend--up"><i class="fa-solid fa-circle-check"></i> ₹24,800 Settled via UPI</span>
+              </div>
+            </div>
+            <div class="dash-kpi-card">
+              <div class="dash-kpi-icon dash-kpi-icon--gold">
+                <i class="fa-solid fa-clock-rotate-left"></i>
+              </div>
+              <div class="dash-kpi-data">
+                <span class="dash-kpi-label">Pending Weekly Settlement</span>
+                <strong class="dash-kpi-value dash-text-gold">₹24,800</strong>
+                <span class="dash-kpi-trend dash-kpi-trend--muted"><i class="fa-regular fa-clock"></i> Auto payout on Monday, 07 Aug</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="dash-card">
+            <div class="dash-card-header">
+              <h3 class="dash-card-title"><i class="fa-solid fa-wallet dash-icon-green"></i> Merchant Commission &amp; Payout Statements</h3>
+            </div>
+            <div class="dash-payout-list">
+              <div class="dash-payout-card">
+                <div class="dash-payout-header-row">
+                  <div class="dash-payout-title-group">
+                    <strong class="dash-mono">#PAY-88201</strong>
+                    <span class="dash-badge dash-badge--light"><i class="fa-solid fa-wallet"></i> Direct UPI</span>
+                  </div>
+                  <span class="dash-badge dash-badge--green-solid"><i class="fa-solid fa-check"></i> SETTLED</span>
+                </div>
+                <div class="dash-payout-body-row">
+                  <div class="dash-payout-data-item">
+                    <small>Commission Amount</small>
+                    <strong class="dash-payout-val dash-text-green">₹8,400</strong>
+                  </div>
+                  <div class="dash-payout-data-item">
+                    <small>Settlement Period</small>
+                    <span>27 Jul - 02 Aug 2026</span>
+                  </div>
+                  <div class="dash-payout-data-item">
+                    <small>Claims Handled</small>
+                    <span>420 Claims</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="dash-payout-card">
+                <div class="dash-payout-header-row">
+                  <div class="dash-payout-title-group">
+                    <strong class="dash-mono">#PAY-88200</strong>
+                    <span class="dash-badge dash-badge--light"><i class="fa-solid fa-wallet"></i> Direct UPI</span>
+                  </div>
+                  <span class="dash-badge dash-badge--green-solid"><i class="fa-solid fa-check"></i> SETTLED</span>
+                </div>
+                <div class="dash-payout-body-row">
+                  <div class="dash-payout-data-item">
+                    <small>Commission Amount</small>
+                    <strong class="dash-payout-val dash-text-green">₹10,200</strong>
+                  </div>
+                  <div class="dash-payout-data-item">
+                    <small>Settlement Period</small>
+                    <span>20 Jul - 26 Jul 2026</span>
+                  </div>
+                  <div class="dash-payout-data-item">
+                    <small>Claims Handled</small>
+                    <span>510 Claims</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="dash-payout-card">
+                <div class="dash-payout-header-row">
+                  <div class="dash-payout-title-group">
+                    <strong class="dash-mono">#PAY-88199</strong>
+                    <span class="dash-badge dash-badge--light"><i class="fa-solid fa-wallet"></i> Direct UPI</span>
+                  </div>
+                  <span class="dash-badge dash-badge--green-solid"><i class="fa-solid fa-check"></i> SETTLED</span>
+                </div>
+                <div class="dash-payout-body-row">
+                  <div class="dash-payout-data-item">
+                    <small>Commission Amount</small>
+                    <strong class="dash-payout-val dash-text-green">₹6,200</strong>
+                  </div>
+                  <div class="dash-payout-data-item">
+                    <small>Settlement Period</small>
+                    <span>13 Jul - 19 Jul 2026</span>
+                  </div>
+                  <div class="dash-payout-data-item">
+                    <small>Claims Handled</small>
+                    <span>310 Claims</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 5: Merchant Settings -->
+        <div id="tabSettings" class="dash-tab-pane" style="display: none;">
+          <div class="dash-card">
+            <h3 class="dash-card-title"><i class="fa-solid fa-store dash-icon-blue"></i> Merchant Outlet Settings &amp; Profile</h3>
+            <form id="merchantSettingsForm" class="dash-settings-form">
+              <div class="dash-form-grid">
+                <div class="dash-form-group">
+                  <label class="dash-form-label">Store Outlet Name</label>
+                  <input type="text" class="dash-form-input" value="Choco Toffee Outlet #402" />
+                </div>
+                <div class="dash-form-group">
+                  <label class="dash-form-label">SFA Automation ID</label>
+                  <input type="text" class="dash-form-input" value="SFA-104829" readonly />
+                </div>
+                <div class="dash-form-group">
+                  <label class="dash-form-label">Settlement UPI ID</label>
+                  <input type="text" class="dash-form-input" value="merchant.toffee@upi" />
+                </div>
+                <div class="dash-form-group">
+                  <label class="dash-form-label">Registered Mobile Number</label>
+                  <input type="text" class="dash-form-input" value="9876543210" />
+                </div>
+              </div>
+              <button type="submit" class="dash-btn dash-btn--gold"><i class="fa-solid fa-floppy-disk"></i> Save Store Settings</button>
+            </form>
+          </div>
+        </div>
+
+      </main>
+    </div>
+
+    <!-- Customer Offer & Profile Detail Modal Popup -->
+    <div id="customerOfferModalOverlay" class="dash-modal-overlay">
+      <div class="dash-modal-card">
+        <button type="button" id="closeCustomerOfferModalBtn" class="dash-modal-close">&times;</button>
+        
+        <!-- Top Logo Header -->
+        <div class="dash-modal-header">
+          <img src="assets/logo-toffee.png" alt="Choco Toffee Logo" class="dash-modal-logo" onerror="this.src='assets/toffee.png'" />
+          <h3 id="offerModalCustomerName" class="dash-modal-name">Mohit Sharma</h3>
+          <span id="offerModalCustomerMobile" class="dash-modal-mobile">Mobile: 9876543210</span>
+        </div>
+
+        <!-- Details Grid Container -->
+        <div class="dash-modal-body">
+          <div class="dash-modal-row">
+            <span class="dash-modal-label"><i class="fa-regular fa-user"></i> Complete Name</span>
+            <span id="offerModalFullName" class="dash-modal-val">Mohit Sharma</span>
+          </div>
+          <div class="dash-modal-row">
+            <span class="dash-modal-label"><i class="fa-solid fa-wallet"></i> Settlement UPI ID</span>
+            <span id="offerModalUpiId" class="dash-modal-val dash-mono">BHARATPE.900687@fbpe</span>
+          </div>
+          <div class="dash-modal-row">
+            <span class="dash-modal-label"><i class="fa-solid fa-ticket"></i> Happy Code</span>
+            <span id="offerModalHappyCode" class="dash-badge dash-badge--dark">7892</span>
+          </div>
+          <div class="dash-modal-row">
+            <span class="dash-modal-label"><i class="fa-regular fa-clock"></i> Claimed Date &amp; Time</span>
+            <span id="offerModalClaimTime" class="dash-modal-val">10:42 AM Today</span>
+          </div>
+          <div class="dash-modal-row">
+            <span class="dash-modal-label"><i class="fa-regular fa-calendar-check"></i> Offer Valid Until</span>
+            <span id="offerModalValidDate" class="dash-modal-val dash-text-gold">31 Aug 2026</span>
+          </div>
+          <div class="dash-modal-row">
+            <span class="dash-modal-label"><i class="fa-solid fa-gift"></i> Available Offer</span>
+            <span id="offerModalOfferTitle" class="dash-modal-val dash-text-green">20% Cashback + Bonus Toffee</span>
+          </div>
+          <div class="dash-modal-row">
+            <span class="dash-modal-label"><i class="fa-solid fa-barcode"></i> Promo Voucher Code</span>
+            <span id="offerModalOfferCode" class="dash-badge dash-badge--gold">CHOCO-GOLD-77</span>
+          </div>
+        </div>
+
+        <button type="button" id="closeOfferModalDoneBtn" class="dash-btn dash-btn--gold dash-modal-btn">
+          DONE &amp; CLOSE
+        </button>
+      </div>
+    </div>
+
+    <script src="retailer.js"></script>
+    <script src="nav-fab.js"></script>
+    <script src="chatbot-adotrip.js"></script>
+  </body>
+</html>
