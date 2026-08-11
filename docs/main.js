@@ -1069,7 +1069,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const callDelayToast = document.createElement("div");
       callDelayToast.className = "toast-notification";
       callDelayToast.style.cssText = "background:rgba(28,28,30,0.95);border:1px solid rgba(255,255,255,0.08);";
-      callDelayToast.innerHTML = '<i class="fa-solid fa-phone-volume" style="color:#30d158"></i>&nbsp; Report submitted! Choco Toffee Support will call you in 5 seconds...';
+      callDelayToast.innerHTML = '<i class="fa-solid fa-phone-volume" style="color:#30d158"></i>&nbsp; Thank You! Our Support Team will call you shortly..';
       document.body.appendChild(callDelayToast);
       setTimeout(() => callDelayToast.classList.add("show"), 50);
       setTimeout(() => {
