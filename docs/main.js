@@ -365,7 +365,13 @@ document.addEventListener("DOMContentLoaded", () => {
         animateRewardCard();
       },
       onComplete: () => {
-        startAutomatedPresentation();
+        // Auto-presentation removed — user triggers via ▶ Play FAB
+        // Expose globally so Play FAB can call it
+        window._presentationReady = true;
+        const playFab = document.getElementById("demoPlayFabBtn");
+        if (playFab) {
+          playFab.classList.add("pulse-ready");
+        }
       }
     });
   }
@@ -447,6 +453,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let presentationPointer = null;
 
   function startAutomatedPresentation() {
+    window._presentationReady = false; // reset so it can't be re-triggered mid-run
     if (!presentationPointer) {
       presentationPointer = document.createElement("div");
       presentationPointer.innerHTML = "👆";
@@ -1054,7 +1061,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const issues = Array.from(checked).map(c => c.value);
       playClickSound();
 
-      // Hide retailer drawer, show fake call overlay
+      // Close retailer drawer and show call notification immediately
       if (retailerDrawer) retailerDrawer.style.display = "none";
       startFakeCall(issues);
     });
@@ -1066,7 +1073,7 @@ document.addEventListener("DOMContentLoaded", () => {
     warningGotItBtn.addEventListener("click", closeWarningModal);
 
   // ===== FAKE CALL SYSTEM =====
-  const GROQ_CF_ENDPOINT = "https://groq-proxy.toffeecampaign.workers.dev/api/chat";
+  const GROQ_CF_ENDPOINT = "https://gpi-mock-updated.mkmkataria07.workers.dev/api/chat";
 
   let callDurationTimer = null;
   let callSecondsElapsed = 0;
@@ -1074,57 +1081,280 @@ document.addEventListener("DOMContentLoaded", () => {
   let conversationHistory = [];
 
   function startFakeCall(issues) {
-    const overlay = document.getElementById("fakeCallOverlay");
-    const connecting = document.getElementById("callConnecting");
-    const countdown = document.getElementById("callCountdown");
-    const statusText = document.getElementById("callStatusText");
+    const banner = document.getElementById("iosCallBanner");
+    const subtitle = document.getElementById("iosCallSubtitle");
+    const declineBtn = document.getElementById("iosDeclineBtn");
+    const acceptBtn = document.getElementById("iosAcceptBtn");
 
-    if (!overlay) return;
-    overlay.style.display = "flex";
+    if (!banner) return;
     callEnded = false;
 
-    // Countdown 5 → 0
-    let secs = 5;
-    if (countdown) countdown.textContent = secs;
-    const countdownInterval = setInterval(() => {
-      secs--;
-      if (countdown) countdown.textContent = secs;
-      if (secs <= 2 && statusText) statusText.textContent = "Ringing...";
-      if (secs <= 0) {
-        clearInterval(countdownInterval);
-        if (statusText) statusText.textContent = "Connected!";
-        setTimeout(() => switchToActiveCall(issues), 600);
+    // ---- Pause background audio & video ----
+    pauseBackgroundMedia();
+
+    // ---- Play ringtone ----
+    startRingtone();
+
+    // Show the iOS call banner with 30-second countdown
+    banner.style.display = "flex";
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => banner.classList.add("show"));
+    });
+
+    // Subtitle animation: Connecting... → Ringing... (Xs)
+    let bannerSecsLeft = 30;
+    if (subtitle) subtitle.textContent = "Connecting...";
+
+    const subtitleTimer = setTimeout(() => {
+      if (subtitle) subtitle.textContent = `Ringing... (${bannerSecsLeft}s)`;
+    }, 1500);
+
+    // Countdown tick every second from 30 → 0
+    const bannerCountdown = setInterval(() => {
+      bannerSecsLeft--;
+      if (subtitle && bannerSecsLeft > 0) {
+        subtitle.textContent = `Ringing... (${bannerSecsLeft}s)`;
+      }
+      if (bannerSecsLeft <= 0) {
+        clearInterval(bannerCountdown);
+        clearTimeout(subtitleTimer);
+        stopRingtone();
+        dismissIosBanner();
+        showMissedCallToast();
+        // Play reverse video transition, then show popup card and resume media
+        setTimeout(() => {
+          playVideoInReverse("assets/video-initial.mp4", () => {
+            resumeBackgroundMedia();
+            if (popup) popup.style.display = "block";
+          });
+        }, 500);
       }
     }, 1000);
 
-    // End call early from connecting screen
-    const endEarlyBtn = document.getElementById("endCallEarlyBtn");
-    if (endEarlyBtn) {
-      endEarlyBtn.onclick = () => {
-        clearInterval(countdownInterval);
-        endFakeCall();
+    // Decline: hide banner, play reverse video transition, show popup card
+    if (declineBtn) {
+      declineBtn.onclick = () => {
+        clearTimeout(subtitleTimer);
+        clearInterval(bannerCountdown);
+        stopRingtone();
+        dismissIosBanner();
+        setTimeout(() => {
+          playVideoInReverse("assets/video-initial.mp4", () => {
+            resumeBackgroundMedia();
+            if (popup) popup.style.display = "block";
+          });
+        }, 300);
+      };
+    }
+
+    // Accept: start voice IVR
+    if (acceptBtn) {
+      acceptBtn.onclick = () => {
+        clearTimeout(subtitleTimer);
+        clearInterval(bannerCountdown);
+        stopRingtone();
+        // Keep media paused during call, resume on end
+        dismissIosBanner();
+        setTimeout(() => startVoiceIVR(issues), 300);
       };
     }
   }
 
-  function switchToActiveCall(issues) {
-    const connecting = document.getElementById("callConnecting");
-    const callActive = document.getElementById("callActive");
-    if (connecting) connecting.style.display = "none";
-    if (callActive) callActive.style.display = "flex";
+  /* --- Ringtone & Media Management --- */
+  let _ringtoneOsc = null;
+  let _ringtoneGain = null;
+  let _ringtoneCtx = null;
+  let _ringtoneInterval = null;
 
-    // Start call timer
-    callSecondsElapsed = 0;
-    clearInterval(callDurationTimer);
-    callDurationTimer = setInterval(() => {
-      callSecondsElapsed++;
-      const mm = String(Math.floor(callSecondsElapsed / 60)).padStart(2, "0");
-      const ss = String(callSecondsElapsed % 60).padStart(2, "0");
-      const durEl = document.getElementById("callDuration");
+  function startRingtone() {
+    stopRingtone(); // clear any existing
+    if (typeof window.AudioContext === "undefined" && typeof window.webkitAudioContext === "undefined") return;
+    try {
+      _ringtoneCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+      const playRingPhase = () => {
+        if (!_ringtoneCtx) return;
+        // Classic Indian mobile ringtone pattern: two short beeps
+        const beep = (freq, start, duration) => {
+          const osc = _ringtoneCtx.createOscillator();
+          const gain = _ringtoneCtx.createGain();
+          osc.type = "sine";
+          osc.frequency.setValueAtTime(freq, _ringtoneCtx.currentTime + start);
+          gain.gain.setValueAtTime(0.18, _ringtoneCtx.currentTime + start);
+          gain.gain.exponentialRampToValueAtTime(0.001, _ringtoneCtx.currentTime + start + duration);
+          osc.connect(gain);
+          gain.connect(_ringtoneCtx.destination);
+          osc.start(_ringtoneCtx.currentTime + start);
+          osc.stop(_ringtoneCtx.currentTime + start + duration);
+        };
+        beep(880, 0, 0.3);      // A5 — first ring
+        beep(880, 0.35, 0.3);   // A5 — second ring
+      };
+
+      playRingPhase();
+      _ringtoneInterval = setInterval(playRingPhase, 2000); // ring every 2s
+    } catch(e) {}
+  }
+
+  function stopRingtone() {
+    clearInterval(_ringtoneInterval);
+    _ringtoneInterval = null;
+    if (_ringtoneCtx) {
+      try { _ringtoneCtx.close(); } catch(e) {}
+      _ringtoneCtx = null;
+    }
+  }
+
+  function pauseBackgroundMedia() {
+    // Pause background music instance
+    if (bgMusic && !bgMusic.paused) {
+      bgMusic._pausedByCall = true;
+      bgMusic.pause();
+    }
+    // Pause all <audio> and <video> elements on the page
+    document.querySelectorAll("audio, video").forEach(el => {
+      if (!el.paused) {
+        el._pausedByCall = true;
+        el.pause();
+      }
+    });
+    // Duck any active Web Audio contexts by lowering master gain if exposed
+    if (window._globalAudioGain) {
+      window._globalAudioGain.gain.setTargetAtTime(0.05, 0, 0.1);
+    }
+  }
+
+  function resumeBackgroundMedia() {
+    // Resume background music instance
+    if (bgMusic && bgMusic._pausedByCall) {
+      bgMusic._pausedByCall = false;
+      bgMusic.play().catch(() => {});
+    }
+    document.querySelectorAll("audio, video").forEach(el => {
+      if (el._pausedByCall) {
+        el._pausedByCall = false;
+        el.play().catch(() => {});
+      }
+    });
+    if (window._globalAudioGain) {
+      window._globalAudioGain.gain.setTargetAtTime(1.0, 0, 0.3);
+    }
+  }
+
+  // Helper to play full-screen video in reverse for premium transitions
+  function playVideoInReverse(src, onComplete) {
+    if (!introVideo || !videoContainer) {
+      if (onComplete) onComplete();
+      return;
+    }
+
+    videoContainer.style.display = "block";
+    gsap.set(videoContainer, { opacity: 1 });
+    videoContainer.dataset.transitioned = "reverse_video";
+
+    introVideo.src = src;
+    introVideo.muted = true;
+    introVideo.loop = false;
+    introVideo.currentTime = 0;
+
+    const onMetadata = () => {
+      introVideo.currentTime = introVideo.duration || 0;
+      
+      let lastTime = performance.now();
+      function reverseLoop(now) {
+        if (videoContainer.dataset.transitioned !== "reverse_video") return;
+        const dt = (now - lastTime) / 1000;
+        lastTime = now;
+
+        let nextTime = introVideo.currentTime - dt;
+        if (nextTime <= 0) {
+          introVideo.currentTime = 0;
+          introVideo.pause();
+          
+          gsap.to(videoContainer, {
+            opacity: 0,
+            duration: 0.8,
+            ease: "power2.inOut",
+            onComplete: () => {
+              videoContainer.style.display = "none";
+              if (onComplete) onComplete();
+            }
+          });
+        } else {
+          introVideo.currentTime = nextTime;
+          requestAnimationFrame(reverseLoop);
+        }
+      }
+
+      introVideo.play().then(() => {
+        introVideo.pause();
+        requestAnimationFrame(reverseLoop);
+      }).catch(() => {
+        requestAnimationFrame(reverseLoop);
+      });
+    };
+
+    introVideo.addEventListener("loadedmetadata", onMetadata, { once: true });
+  }
+
+  function showMissedCallToast() {
+    const toast = document.createElement("div");
+    toast.className = "toast-notification";
+    toast.style.background = "rgba(28,28,30,0.95)";
+    toast.style.border = "1px solid rgba(255,255,255,0.1)";
+    toast.innerHTML = '<i class="fa-solid fa-phone-missed" style="color:#ff453a;"></i> Missed call — Choco Toffee Support';
+    document.body.appendChild(toast);
+    setTimeout(() => toast.classList.add("show"), 50);
+    setTimeout(() => {
+      toast.classList.remove("show");
+      setTimeout(() => toast.remove(), 400);
+    }, 3500);
+  }
+
+  function dismissIosBanner() {
+    const banner = document.getElementById("iosCallBanner");
+    if (!banner) return;
+    banner.classList.remove("show");
+    setTimeout(() => { banner.style.display = "none"; }, 600);
+  }
+
+  /* =========================================================
+     VOICE IVR SYSTEM — Groq AI + Web Speech API
+     ========================================================= */
+
+  let voiceCallActive = false;
+  let voiceSpeechRecognition = null;
+  let voiceCallTimer = null;
+  let voiceCallSeconds = 0;
+
+  function startVoiceIVR(issues) {
+    voiceCallActive = true;
+    callEnded = false;
+    conversationHistory = [];
+
+    // Show voice call indicator pill
+    const indicator = document.getElementById("voiceCallIndicator");
+    if (indicator) {
+      indicator.style.display = "flex";
+      requestAnimationFrame(() => requestAnimationFrame(() => indicator.classList.add("show")));
+    }
+
+    // Start call duration timer
+    voiceCallSeconds = 0;
+    clearInterval(voiceCallTimer);
+    voiceCallTimer = setInterval(() => {
+      voiceCallSeconds++;
+      const mm = String(Math.floor(voiceCallSeconds / 60)).padStart(2, "0");
+      const ss = String(voiceCallSeconds % 60).padStart(2, "0");
+      const durEl = document.getElementById("voiceCallDuration");
       if (durEl) durEl.textContent = `${mm}:${ss}`;
     }, 1000);
 
-    // Set up conversation context
+    // Wire hang-up button
+    const hangupBtn = document.getElementById("voiceHangupBtn");
+    if (hangupBtn) hangupBtn.onclick = () => endVoiceCall(true);
+
+    // Build IVR system prompt
     const issueLabels = {
       out_of_stock: "Out of Stock",
       refused: "Retailer Refused",
@@ -1133,65 +1363,30 @@ document.addEventListener("DOMContentLoaded", () => {
     };
     const issueText = issues.map(i => issueLabels[i] || i).join(", ");
 
-    conversationHistory = [
-      {
-        role: "system",
-        content: `You are a friendly and professional Choco Toffee customer support agent named Priya. 
-You are on a phone call with a customer who reported the following issues with their retailer: ${issueText}.
-Your job is to:
-1. First greet the customer warmly and acknowledge their complaint.
-2. Ask 2-3 short follow-up questions to understand the situation better (e.g., retailer name/location, what happened, etc.).
-3. Reassure them their issue has been noted and escalated.
-4. At the very end, thank them and say the call is ending.
-Keep responses concise (1-3 sentences each). Sound like a real human support agent, warm and empathetic.
-When you're done gathering info and have reassured the customer, respond with your final message and end it with: "Thank you for calling Choco Toffee Support. We'll resolve this for you. Have a great day! [CALL_END]"`
-      }
-    ];
+    conversationHistory = [{
+      role: "system",
+      content: `You are Priya, a warm and professional Choco Toffee customer support agent on a phone call.
+The customer reported these retailer issues: ${issueText}.
+Your job:
+1. Greet warmly and acknowledge the issue.
+2. Ask 1-2 short follow-up questions (retailer name/location, brief description).
+3. Reassure them it's escalated and will be resolved.
+4. End the call warmly.
+IMPORTANT: Keep every response SHORT (1-2 sentences max). You are speaking, not texting.
+When ending the call, include [CALL_END] at the very end of your final message.`
+    }];
 
-    // Greet immediately
-    addAgentTyping();
-    setTimeout(async () => {
-      removeTyping();
-      const greeting = await callGroqAPI(null);
-      addMessage("agent", greeting);
-      if (greeting.includes("[CALL_END]")) {
-        handleCallEnd();
-      }
-    }, 1200);
-
-    // Wire up send button and enter key
-    const sendBtn = document.getElementById("callSendBtn");
-    const input = document.getElementById("callUserInput");
-    const endBtn = document.getElementById("endCallBtn");
-
-    if (sendBtn) sendBtn.onclick = sendCallMessage;
-    if (input) {
-      input.onkeydown = (e) => {
-        if (e.key === "Enter" && !e.shiftKey) {
-          e.preventDefault();
-          sendCallMessage();
+    // Start with agent greeting
+    setVoiceStatus("speaking");
+    callGroqAPI(null).then(greeting => {
+      speakText(greeting, () => {
+        if (greeting.includes("[CALL_END]")) {
+          endVoiceCall(false);
+        } else {
+          listenForUserSpeech();
         }
-      };
-    }
-    if (endBtn) endBtn.onclick = endFakeCall;
-  }
-
-  async function sendCallMessage() {
-    if (callEnded) return;
-    const input = document.getElementById("callUserInput");
-    if (!input || !input.value.trim()) return;
-    const text = input.value.trim();
-    input.value = "";
-    addMessage("user", text);
-    addAgentTyping();
-
-    const reply = await callGroqAPI(text);
-    removeTyping();
-    addMessage("agent", reply);
-
-    if (reply.includes("[CALL_END]")) {
-      handleCallEnd();
-    }
+      });
+    });
   }
 
   async function callGroqAPI(userMessage) {
@@ -1199,30 +1394,69 @@ When you're done gathering info and have reassured the customer, respond with yo
       conversationHistory.push({ role: "user", content: userMessage });
     }
 
+    // Try Cloudflare Worker Proxy first
     try {
       const response = await fetch(GROQ_CF_ENDPOINT, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "llama3-8b-8192",
+          model: "llama-3.3-70b-versatile",
           messages: conversationHistory,
-          max_tokens: 150,
+          max_tokens: 100,
           temperature: 0.7
         })
       });
 
-      if (!response.ok) throw new Error("API error");
-      const data = await response.json();
-      const reply = data.choices?.[0]?.message?.content || "I understand. Let me note that for you.";
-      conversationHistory.push({ role: "assistant", content: reply });
-      return reply;
+      if (response.ok) {
+        const data = await response.json();
+        const reply = data.choices?.[0]?.message?.content || "I understand. Let me note that for you.";
+        conversationHistory.push({ role: "assistant", content: reply });
+        console.log("🟢 Groq API response via Cloudflare Worker Proxy.");
+        return reply;
+      }
+      throw new Error("Worker API error status: " + response.status);
     } catch (err) {
-      // Fallback scripted responses if API fails
+      console.warn("⚠️ Groq Cloudflare Worker Proxy failed or offline:", err.message);
+
+      // Fallback: Try direct browser-to-Groq request using localStorage API key
+      const localKey = localStorage.getItem("GROQ_API_KEY");
+      if (localKey && localKey.trim()) {
+        try {
+          console.log("🔄 Attempting direct connection to Groq API using localStorage GROQ_API_KEY...");
+          const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${localKey.trim()}`
+            },
+            body: JSON.stringify({
+              model: "llama-3.3-70b-versatile",
+              messages: conversationHistory,
+              max_tokens: 100,
+              temperature: 0.7
+            })
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            const reply = data.choices?.[0]?.message?.content || "I understand. Let me note that for you.";
+            conversationHistory.push({ role: "assistant", content: reply });
+            console.log("🟢 Direct Groq API connection successful!");
+            return reply;
+          }
+          console.error("🔴 Direct Groq API failed with status:", response.status);
+        } catch (directErr) {
+          console.error("🔴 Direct Groq API request failed:", directErr);
+        }
+      }
+
+      // Offline scripted fallbacks
+      console.log("ℹ️ Using offline fallback support script.");
       const fallbacks = [
-        "Hello! Thank you for reaching out to Choco Toffee Support. I'm sorry to hear you had trouble claiming your reward. Could you please tell me the name of the retailer where this happened?",
+        "Hello! I'm Priya from Choco Toffee Support. I'm sorry to hear you had trouble claiming your reward. Could you tell me the name of the retailer?",
         "I understand. That's definitely something we want to look into. Was this your first time visiting this store?",
-        "Got it. We've registered your complaint and our team will follow up with the retailer. Is there anything else I can help you with?",
-        "Thank you so much for bringing this to our attention. Your feedback helps us improve. Thank you for calling Choco Toffee Support. We'll resolve this for you. Have a great day! [CALL_END]"
+        "Got it. We've registered your complaint and our team will follow up with the retailer shortly.",
+        "Thank you so much for bringing this to our attention. Thank you for calling Choco Toffee Support. We'll resolve this for you. Have a great day! [CALL_END]"
       ];
       const idx = Math.min(
         conversationHistory.filter(m => m.role === "assistant").length,
@@ -1234,77 +1468,200 @@ When you're done gathering info and have reassured the customer, respond with yo
     }
   }
 
-  function addMessage(type, text) {
-    const msgs = document.getElementById("callChatMessages");
-    if (!msgs) return;
-    const div = document.createElement("div");
+  function speakText(text, onDone) {
+    if (!voiceCallActive) return;
     const cleanText = text.replace("[CALL_END]", "").trim();
-    div.className = `call-msg call-msg-${type}`;
-    div.textContent = cleanText;
-    msgs.appendChild(div);
-    msgs.scrollTop = msgs.scrollHeight;
+    if (!cleanText) { if (onDone) onDone(); return; }
+
+    window.speechSynthesis.cancel(); // stop any current speech
+
+    const doSpeak = () => {
+      if (!voiceCallActive) return;
+      const utterance = new SpeechSynthesisUtterance(cleanText);
+      utterance.rate = 1.0;
+      utterance.pitch = 1.05;
+      utterance.volume = 1;
+
+      // Pick a female English voice
+      const voices = window.speechSynthesis.getVoices();
+      const preferred = voices.find(v =>
+        (v.name.includes("Samantha") || v.name.includes("Google UK English Female") ||
+         v.name.includes("Microsoft Zira") || v.name.includes("Karen") || v.name.includes("Moira") ||
+         (v.name.toLowerCase().includes("female") && v.lang.startsWith("en")))
+      ) || voices.find(v => v.lang.startsWith("en-")) || voices[0];
+      if (preferred) utterance.voice = preferred;
+
+      setVoiceStatus("speaking");
+      utterance.onend = () => { if (voiceCallActive && onDone) onDone(); };
+      utterance.onerror = () => { if (voiceCallActive && onDone) onDone(); };
+
+      window.speechSynthesis.speak(utterance);
+
+      // Chrome bug workaround: speechSynthesis can get stuck on long text
+      // Pause and resume every 10s to keep it alive
+      const keepAlive = setInterval(() => {
+        if (!window.speechSynthesis.speaking) { clearInterval(keepAlive); return; }
+        window.speechSynthesis.pause();
+        window.speechSynthesis.resume();
+      }, 10000);
+      utterance.onend = () => {
+        clearInterval(keepAlive);
+        if (voiceCallActive && onDone) onDone();
+      };
+      utterance.onerror = () => {
+        clearInterval(keepAlive);
+        if (voiceCallActive && onDone) onDone();
+      };
+    };
+
+    // Wait for voices to be loaded (Chrome async issue)
+    const voices = window.speechSynthesis.getVoices();
+    if (voices.length > 0) {
+      doSpeak();
+    } else {
+      window.speechSynthesis.onvoiceschanged = () => {
+        window.speechSynthesis.onvoiceschanged = null;
+        doSpeak();
+      };
+      // Fallback: try after 500ms if onvoiceschanged doesn't fire
+      setTimeout(() => { if (voiceCallActive) doSpeak(); }, 500);
+    }
   }
 
-  function addAgentTyping() {
-    const msgs = document.getElementById("callChatMessages");
-    if (!msgs) return;
-    const div = document.createElement("div");
-    div.className = "call-msg call-msg-typing";
-    div.id = "typingIndicator";
-    div.innerHTML = '<div class="typing-dots"><span></span><span></span><span></span></div>';
-    msgs.appendChild(div);
-    msgs.scrollTop = msgs.scrollHeight;
-  }
+  function listenForUserSpeech() {
+    if (!voiceCallActive) return;
 
-  function removeTyping() {
-    const t = document.getElementById("typingIndicator");
-    if (t) t.remove();
-  }
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
-  function handleCallEnd() {
-    callEnded = true;
-    clearInterval(callDurationTimer);
+    // Fallback: if no speech recognition, show mic prompt overlay
+    if (!SpeechRecognition) {
+      showVoiceFallbackInput();
+      return;
+    }
 
-    const inputRow = document.getElementById("callInputRow");
-    if (inputRow) inputRow.style.display = "none";
+    setVoiceStatus("listening");
+    voiceSpeechRecognition = new SpeechRecognition();
+    voiceSpeechRecognition.lang = "en-IN";
+    voiceSpeechRecognition.continuous = false;
+    voiceSpeechRecognition.interimResults = false;
+    voiceSpeechRecognition.maxAlternatives = 1;
 
-    setTimeout(() => {
-      // Show "Call Ended" overlay
-      const msgs = document.getElementById("callChatMessages");
-      if (msgs) {
-        const endDiv = document.createElement("div");
-        endDiv.style.cssText = "text-align:center;padding:20px;color:rgba(255,255,255,0.4);font-family:Poppins,sans-serif;font-size:12px;";
-        endDiv.innerHTML = '<i class="fa-solid fa-phone-slash" style="font-size:22px;color:#e53935;margin-bottom:8px;display:block;"></i>Call Ended';
-        msgs.appendChild(endDiv);
-        msgs.scrollTop = msgs.scrollHeight;
+    let silenceTimeout = setTimeout(() => {
+      // No speech detected after 8s — send empty signal to advance conversation
+      voiceSpeechRecognition.stop();
+      setVoiceStatus("speaking");
+      callGroqAPI("[customer is silent]").then(reply => {
+        speakText(reply, () => {
+          if (reply.includes("[CALL_END]")) endVoiceCall(false);
+          else listenForUserSpeech();
+        });
+      });
+    }, 8000);
+
+    voiceSpeechRecognition.onresult = (event) => {
+      clearTimeout(silenceTimeout);
+      const transcript = event.results[0][0].transcript;
+      setVoiceStatus("speaking");
+      callGroqAPI(transcript).then(reply => {
+        speakText(reply, () => {
+          if (reply.includes("[CALL_END]")) endVoiceCall(false);
+          else listenForUserSpeech();
+        });
+      });
+    };
+
+    voiceSpeechRecognition.onerror = (e) => {
+      clearTimeout(silenceTimeout);
+      if (e.error === "no-speech") {
+        setVoiceStatus("speaking");
+        callGroqAPI("[customer is silent]").then(reply => {
+          speakText(reply, () => {
+            if (reply.includes("[CALL_END]")) endVoiceCall(false);
+            else listenForUserSpeech();
+          });
+        });
       }
-      // After 2.5s, close the call and return to popup
-      setTimeout(() => endFakeCall(), 2500);
-    }, 800);
+    };
+
+    voiceSpeechRecognition.start();
+  }
+
+  function showVoiceFallbackInput() {
+    // Show a minimal text input overlay if browser doesn't support SpeechRecognition
+    const indicator = document.getElementById("voiceCallIndicator");
+    const fallback = document.getElementById("voiceFallbackInput");
+    if (fallback) {
+      fallback.style.display = "flex";
+      const input = document.getElementById("voiceFallbackText");
+      const sendBtn = document.getElementById("voiceFallbackSend");
+      if (sendBtn && input) {
+        sendBtn.onclick = () => {
+          const txt = input.value.trim();
+          if (!txt) return;
+          input.value = "";
+          fallback.style.display = "none";
+          setVoiceStatus("speaking");
+          callGroqAPI(txt).then(reply => {
+            speakText(reply, () => {
+              if (reply.includes("[CALL_END]")) endVoiceCall(false);
+              else showVoiceFallbackInput();
+            });
+          });
+        };
+        input.onkeydown = (e) => { if (e.key === "Enter") sendBtn.click(); };
+      }
+    }
+  }
+
+  function setVoiceStatus(status) {
+    const indicator = document.getElementById("voiceCallIndicator");
+    if (!indicator) return;
+    indicator.dataset.status = status;
+    const statusEl = document.getElementById("voiceCallStatus");
+    if (statusEl) {
+      if (status === "speaking") statusEl.textContent = "Agent speaking...";
+      else if (status === "listening") statusEl.textContent = "Listening...";
+      else statusEl.textContent = "On call";
+    }
+    // Toggle mic waveform active class
+    const wave = indicator.querySelector(".voice-waveform");
+    if (wave) wave.classList.toggle("active", status === "listening");
+  }
+
+  function endVoiceCall(immediate) {
+    voiceCallActive = false;
+    callEnded = true;
+    clearInterval(voiceCallTimer);
+    window.speechSynthesis.cancel();
+    stopRingtone();
+    if (voiceSpeechRecognition) {
+      try { voiceSpeechRecognition.stop(); } catch(e) {}
+      voiceSpeechRecognition = null;
+    }
+    conversationHistory = [];
+
+    const indicator = document.getElementById("voiceCallIndicator");
+    if (indicator) {
+      indicator.classList.add("call-ended");
+      const statusEl = document.getElementById("voiceCallStatus");
+      if (statusEl) statusEl.textContent = "Call ended";
+      setTimeout(() => {
+        indicator.classList.remove("show", "call-ended");
+        setTimeout(() => { indicator.style.display = "none"; }, 600);
+      }, immediate ? 500 : 2000);
+    }
+
+    // Play reverse video transition, then show popup card and resume background music
+    setTimeout(() => {
+      playVideoInReverse("assets/video-initial.mp4", () => {
+        resumeBackgroundMedia();
+        if (popup) popup.style.display = "block";
+      });
+    }, immediate ? 600 : 2200);
   }
 
   function endFakeCall() {
-    clearInterval(callDurationTimer);
-    callEnded = true;
-    const overlay = document.getElementById("fakeCallOverlay");
-    const connecting = document.getElementById("callConnecting");
-    const callActive = document.getElementById("callActive");
-    const msgs = document.getElementById("callChatMessages");
-
-    if (overlay) overlay.style.display = "none";
-    if (connecting) connecting.style.display = "flex";
-    if (callActive) callActive.style.display = "none";
-    if (msgs) msgs.innerHTML = "";
-    conversationHistory = [];
-
-    // Reset countdown
-    const countdown = document.getElementById("callCountdown");
-    const statusText = document.getElementById("callStatusText");
-    if (countdown) countdown.textContent = "5";
-    if (statusText) statusText.textContent = "Connecting...";
-
-    // Show popup again
-    if (popup) popup.style.display = "block";
+    endVoiceCall(true);
   }
 
   /* ---------- 3. HAPPY CODE 4-BOX AUTO FOCUS & PASTE ---------- */
@@ -1995,6 +2352,7 @@ When you're done gathering info and have reassured the customer, respond with yo
         fireGoldenConfetti();
         setTimeout(openRedemptionDrawer, 800);
       } else if (btn.id === "btnNo") {
+        // Open the retailer issue report drawer immediately
         setTimeout(openRetailerDrawer, 400);
       }
     });
@@ -2104,4 +2462,8 @@ When you're done gathering info and have reassured the customer, respond with yo
   }
 
   initWelcomeMatterPhysicsToffees();
+
+  // Expose functions globally for FAB Play button
+  window.startAutomatedPresentation = startAutomatedPresentation;
+  window.startVoiceIVR = startVoiceIVR;
 });

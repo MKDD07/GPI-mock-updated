@@ -221,30 +221,62 @@
         </button>
       </div>
 
-      <!-- Fake Call Overlay -->
-      <div id="fakeCallOverlay" class="fake-call-overlay" style="display:none;">
-        <!-- Connecting Screen -->
-        <div id="callConnecting" class="call-connecting-screen">
-          <div class="call-avatar-ring">
-            <div class="call-avatar-pulse"></div>
-            <div class="call-avatar-pulse delay1"></div>
-            <div class="call-avatar-pulse delay2"></div>
-            <div class="call-avatar-icon">
-              <i class="fa-solid fa-headset"></i>
-            </div>
+      <!-- iOS Incoming Call Notification Banner -->
+      <div id="iosCallBanner" class="ios-call-banner" style="display:none;">
+        <div class="ios-call-avatar-wrap">
+          <div class="ios-call-ring"></div>
+          <div class="ios-call-ring"></div>
+          <div class="ios-call-avatar">
+            <i class="fa-solid fa-headset"></i>
           </div>
-          <h3 class="call-name">Choco Toffee Support</h3>
-          <p class="call-status-text" id="callStatusText">Connecting...</p>
-          <div class="call-timer-badge" id="callCountdownBadge">
-            <span id="callCountdown">5</span>
-          </div>
-          <button id="endCallEarlyBtn" class="call-end-btn call-end-btn-sm">
+        </div>
+        <div class="ios-call-info">
+          <span class="ios-call-app-label">Phone &middot; Incoming Call</span>
+          <span class="ios-call-name">Choco Toffee Support</span>
+          <span class="ios-call-subtitle" id="iosCallSubtitle">Connecting...</span>
+        </div>
+        <div class="ios-call-actions">
+          <button class="ios-call-btn ios-call-decline" id="iosDeclineBtn" aria-label="Decline call">
             <i class="fa-solid fa-phone-slash"></i>
           </button>
+          <button class="ios-call-btn ios-call-accept" id="iosAcceptBtn" aria-label="Accept call">
+            <i class="fa-solid fa-phone"></i>
+          </button>
         </div>
+      </div>
+      <!-- Voice Call Indicator Pill (shows during active voice IVR) -->
+      <div id="voiceCallIndicator" class="voice-call-indicator" style="display:none;">
+        <div class="voice-call-avatar">
+          <i class="fa-solid fa-headset"></i>
+          <span class="voice-live-badge"></span>
+        </div>
+        <div class="voice-call-info">
+          <span class="voice-call-name">Choco Toffee Support</span>
+          <span class="voice-call-meta">
+            <span id="voiceCallStatus">On call</span>
+            &middot;
+            <span id="voiceCallDuration">00:00</span>
+          </span>
+          <!-- Mic waveform animation -->
+          <div class="voice-waveform">
+            <span></span><span></span><span></span><span></span><span></span>
+          </div>
+        </div>
+        <button id="voiceHangupBtn" class="voice-hangup-btn" aria-label="Hang up">
+          <i class="fa-solid fa-phone-slash"></i>
+        </button>
+      </div>
 
+      <!-- Voice fallback text input (for browsers without SpeechRecognition) -->
+      <div id="voiceFallbackInput" class="voice-fallback-input" style="display:none;">
+        <input type="text" id="voiceFallbackText" placeholder="Type your reply..." />
+        <button id="voiceFallbackSend"><i class="fa-solid fa-paper-plane"></i></button>
+      </div>
+
+      <!-- Fake Call Overlay (kept for legacy, hidden by default) -->
+      <div id="fakeCallOverlay" class="fake-call-overlay" style="display:none;">
         <!-- Active Chat Call Screen -->
-        <div id="callActive" class="call-active-screen" style="display:none;">
+        <div id="callActive" class="call-active-screen">
           <div class="call-active-header">
             <div class="call-active-avatar">
               <i class="fa-solid fa-headset"></i>
