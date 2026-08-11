@@ -1386,7 +1386,10 @@ Your Instructions:
 1. Speak warmly, naturally, and concisely (1-2 short conversational sentences max).
 2. If the user doesn't respond or is silent, politely repeat your last question or ask if they are still on the line.
 3. Help address their reported retailer complaint, collect details if needed, and confirm escalation.
-4. When concluding the support call, include [CALL_END] at the very end of your final r    const initialGreeting = "Hello! I'm Priya from Choco Toffee Support. I'm sorry to hear you had trouble claiming your reward. Could you tell me the name of the retailer?";
+4. When concluding the support call, include [CALL_END] at the very end of your final response.`
+    }];
+
+    const initialGreeting = "Hello! I'm Priya from Choco Toffee Support. I'm sorry to hear you had trouble claiming your reward. Could you tell me the name of the retailer?";
     conversationHistory.push({ role: "assistant", content: initialGreeting });
 
     // Show Chat Transcript Overlay below Call Indicator
