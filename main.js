@@ -1386,17 +1386,62 @@ Your Instructions:
 1. Speak warmly, naturally, and concisely (1-2 short conversational sentences max).
 2. If the user doesn't respond or is silent, politely repeat your last question or ask if they are still on the line.
 3. Help address their reported retailer complaint, collect details if needed, and confirm escalation.
-4. When concluding the support call, include [CALL_END] at the very end of your final response.`
-    }];
-
-    const initialGreeting = "Hello! I'm Priya from Choco Toffee Support. I'm sorry to hear you had trouble claiming your reward. Could you tell me the name of the retailer?";
+4. When concluding the support call, include [CALL_END] at the very end of your final r    const initialGreeting = "Hello! I'm Priya from Choco Toffee Support. I'm sorry to hear you had trouble claiming your reward. Could you tell me the name of the retailer?";
     conversationHistory.push({ role: "assistant", content: initialGreeting });
+
+    // Show Chat Transcript Overlay below Call Indicator
+    const chatOverlay = document.getElementById("voiceCallChatOverlay");
+    const chatLog = document.getElementById("voiceChatLog");
+    if (chatOverlay) chatOverlay.style.display = "flex";
+    if (chatLog) {
+      chatLog.innerHTML = "";
+      appendVoiceChatMessage("Priya", initialGreeting, "agent");
+    }
+
+    // Setup input bar inside transcript overlay
+    const fallbackInput = document.getElementById("voiceFallbackText");
+    const fallbackSend = document.getElementById("voiceFallbackSend");
+    if (fallbackSend && fallbackInput) {
+      fallbackSend.onclick = () => {
+        const text = fallbackInput.value.trim();
+        if (!text || !voiceCallActive) return;
+        fallbackInput.value = "";
+        if (voiceSpeechRecognition) {
+          try { voiceSpeechRecognition.stop(); } catch(e) {}
+        }
+        appendVoiceChatMessage("You", text, "user");
+        setVoiceStatus("speaking");
+        callGroqAPI(text).then(reply => {
+          appendVoiceChatMessage("Priya", reply, "agent");
+          speakText(reply, () => {
+            if (reply.includes("[CALL_END]")) endVoiceCall(false);
+            else listenForUserSpeech();
+          });
+        });
+      };
+      fallbackInput.onkeydown = (e) => {
+        if (e.key === "Enter") fallbackSend.click();
+      };
+    }
 
     // Start with agent greeting
     setVoiceStatus("speaking");
     speakText(initialGreeting, () => {
       listenForUserSpeech();
     });
+  }
+
+  function appendVoiceChatMessage(sender, text, type) {
+    const chatLog = document.getElementById("voiceChatLog");
+    if (!chatLog) return;
+    const clean = text.replace("[CALL_END]", "").trim();
+    if (!clean) return;
+
+    const msgEl = document.createElement("div");
+    msgEl.className = `voice-chat-msg ${type}`;
+    msgEl.innerHTML = `<strong>${sender}:</strong> ${clean}`;
+    chatLog.appendChild(msgEl);
+    chatLog.scrollTop = chatLog.scrollHeight;
   }
 
   async function callGroqAPI(userMessage) {
@@ -1511,18 +1556,13 @@ Your Instructions:
       if (preferred) utterance.voice = preferred;
 
       setVoiceStatus("speaking");
-      utterance.onend = () => { if (voiceCallActive && onDone) onDone(); };
-      utterance.onerror = () => { if (voiceCallActive && onDone) onDone(); };
 
-      window.speechSynthesis.speak(utterance);
-
-      // Chrome bug workaround: speechSynthesis can get stuck on long text
-      // Pause and resume every 10s to keep it alive
       const keepAlive = setInterval(() => {
         if (!window.speechSynthesis.speaking) { clearInterval(keepAlive); return; }
         window.speechSynthesis.pause();
         window.speechSynthesis.resume();
       }, 10000);
+
       utterance.onend = () => {
         clearInterval(keepAlive);
         if (voiceCallActive && onDone) onDone();
@@ -1531,9 +1571,10 @@ Your Instructions:
         clearInterval(keepAlive);
         if (voiceCallActive && onDone) onDone();
       };
+
+      window.speechSynthesis.speak(utterance);
     };
 
-    // Wait for voices to be loaded (Chrome async issue)
     const voices = window.speechSynthesis.getVoices();
     if (voices.length > 0) {
       doSpeak();
@@ -1542,7 +1583,6 @@ Your Instructions:
         window.speechSynthesis.onvoiceschanged = null;
         doSpeak();
       };
-      // Fallback: try after 500ms if onvoiceschanged doesn't fire
       setTimeout(() => { if (voiceCallActive) doSpeak(); }, 500);
     }
   }
@@ -1552,82 +1592,59 @@ Your Instructions:
 
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
-    // Fallback: if no speech recognition, show mic prompt overlay
-    if (!SpeechRecognition) {
-      showVoiceFallbackInput();
-      return;
-    }
-
     setVoiceStatus("listening");
-    voiceSpeechRecognition = new SpeechRecognition();
-    voiceSpeechRecognition.lang = "en-IN";
-    voiceSpeechRecognition.continuous = false;
-    voiceSpeechRecognition.interimResults = false;
-    voiceSpeechRecognition.maxAlternatives = 1;
 
-    let silenceTimeout = setTimeout(() => {
-      // No speech detected after 10s — IVR style repeat/check-in prompt
-      voiceSpeechRecognition.stop();
-      setVoiceStatus("speaking");
-      callGroqAPI("[IVR SYSTEM: Customer gave no speech input for 10 seconds. In 1 short polite sentence, repeat your last question or check if they are still on the line.]").then(reply => {
-        speakText(reply, () => {
-          if (reply.includes("[CALL_END]")) endVoiceCall(false);
-          else listenForUserSpeech();
-        });
-      });
-    }, 10000);
+    if (SpeechRecognition) {
+      if (voiceSpeechRecognition) {
+        try { voiceSpeechRecognition.stop(); } catch(e) {}
+      }
+      voiceSpeechRecognition = new SpeechRecognition();
+      voiceSpeechRecognition.lang = "en-IN";
+      voiceSpeechRecognition.continuous = false;
+      voiceSpeechRecognition.interimResults = false;
+      voiceSpeechRecognition.maxAlternatives = 1;
 
-    voiceSpeechRecognition.onresult = (event) => {
-      clearTimeout(silenceTimeout);
-      const transcript = event.results[0][0].transcript;
-      setVoiceStatus("speaking");
-      callGroqAPI(transcript).then(reply => {
-        speakText(reply, () => {
-          if (reply.includes("[CALL_END]")) endVoiceCall(false);
-          else listenForUserSpeech();
-        });
-      });
-    };
-
-    voiceSpeechRecognition.onerror = (e) => {
-      clearTimeout(silenceTimeout);
-      if (e.error === "no-speech") {
+      let silenceTimeout = setTimeout(() => {
+        try { voiceSpeechRecognition.stop(); } catch(e) {}
         setVoiceStatus("speaking");
-        callGroqAPI("[customer is silent]").then(reply => {
+        callGroqAPI("[IVR SYSTEM: Customer gave no speech input for 10 seconds. In 1 short polite sentence, repeat your last question or check if they are still on the line.]").then(reply => {
+          appendVoiceChatMessage("Priya", reply, "agent");
           speakText(reply, () => {
             if (reply.includes("[CALL_END]")) endVoiceCall(false);
             else listenForUserSpeech();
           });
         });
-      }
-    };
+      }, 10000);
 
-    voiceSpeechRecognition.start();
-  }
-
-  function showVoiceFallbackInput() {
-    // Show a minimal text input overlay if browser doesn't support SpeechRecognition
-    const indicator = document.getElementById("voiceCallIndicator");
-    const fallback = document.getElementById("voiceFallbackInput");
-    if (fallback) {
-      fallback.style.display = "flex";
-      const input = document.getElementById("voiceFallbackText");
-      const sendBtn = document.getElementById("voiceFallbackSend");
-      if (sendBtn && input) {
-        sendBtn.onclick = () => {
-          const txt = input.value.trim();
-          if (!txt) return;
-          input.value = "";
-          fallback.style.display = "none";
-          setVoiceStatus("speaking");
-          callGroqAPI(txt).then(reply => {
-            speakText(reply, () => {
-              if (reply.includes("[CALL_END]")) endVoiceCall(false);
-              else showVoiceFallbackInput();
-            });
+      voiceSpeechRecognition.onresult = (event) => {
+        clearTimeout(silenceTimeout);
+        const transcript = event.results[0][0].transcript;
+        appendVoiceChatMessage("You", transcript, "user");
+        setVoiceStatus("speaking");
+        callGroqAPI(transcript).then(reply => {
+          appendVoiceChatMessage("Priya", reply, "agent");
+          speakText(reply, () => {
+            if (reply.includes("[CALL_END]")) endVoiceCall(false);
+            else listenForUserSpeech();
           });
-        };
-        input.onkeydown = (e) => { if (e.key === "Enter") sendBtn.click(); };
+        });
+      };
+
+      voiceSpeechRecognition.onerror = (e) => {
+        clearTimeout(silenceTimeout);
+        console.warn("Speech recognition error:", e.error);
+        if (e.error === "no-speech" || e.error === "network" || e.error === "not-allowed") {
+          // Keep call alive and let user type or retry listening
+          setTimeout(() => {
+            if (voiceCallActive) listenForUserSpeech();
+          }, 1000);
+        }
+      };
+
+      try {
+        voiceSpeechRecognition.start();
+      } catch(startErr) {
+        console.warn("SpeechRecognition start error:", startErr);
       }
     }
   }
@@ -1639,10 +1656,9 @@ Your Instructions:
     const statusEl = document.getElementById("voiceCallStatus");
     if (statusEl) {
       if (status === "speaking") statusEl.textContent = "Agent speaking...";
-      else if (status === "listening") statusEl.textContent = "Listening...";
+      else if (status === "listening") statusEl.textContent = "Listening (or type below)...";
       else statusEl.textContent = "On call";
     }
-    // Toggle mic waveform active class
     const wave = indicator.querySelector(".voice-waveform");
     if (wave) wave.classList.toggle("active", status === "listening");
   }
@@ -1658,6 +1674,9 @@ Your Instructions:
       voiceSpeechRecognition = null;
     }
     conversationHistory = [];
+
+    const chatOverlay = document.getElementById("voiceCallChatOverlay");
+    if (chatOverlay) chatOverlay.style.display = "none";
 
     const indicator = document.getElementById("voiceCallIndicator");
     if (indicator) {
