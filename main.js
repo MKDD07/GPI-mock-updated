@@ -1391,16 +1391,13 @@ IMPORTANT: Keep every response SHORT (1-2 sentences max). You are speaking, not 
 When ending the call, include [CALL_END] at the very end of your final message.`
     }];
 
+    const initialGreeting = "Hello! I'm Priya from Choco Toffee Support. I'm sorry to hear you had trouble claiming your reward. Could you tell me the name of the retailer?";
+    conversationHistory.push({ role: "assistant", content: initialGreeting });
+
     // Start with agent greeting
     setVoiceStatus("speaking");
-    callGroqAPI(null).then(greeting => {
-      speakText(greeting, () => {
-        if (greeting.includes("[CALL_END]")) {
-          endVoiceCall(false);
-        } else {
-          listenForUserSpeech();
-        }
-      });
+    speakText(initialGreeting, () => {
+      listenForUserSpeech();
     });
   }
 
