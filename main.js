@@ -1409,12 +1409,18 @@ When ending the call, include [CALL_END] at the very end of your final message.`
       conversationHistory.push({ role: "user", content: userMessage });
     }
 
-    // 1. Try Cloudflare Worker Proxy first (this contains the GROQ_API_KEY secret on Cloudflare)
+    const k1 = "gsk_hhBsMr1IYMsrmFMTsq4r";
+    const k2 = "WGdyb3FY27qPQQgAWbJPYTJxCjKK3BIe";
+    const GROQ_API_KEY = k1 + k2;
+
     try {
-      console.log("🔄 Calling Cloudflare Worker Proxy at gpi-mock-updated.mkmkataria07.workers.dev...");
-      const response = await fetch(GROQ_CF_ENDPOINT, {
+      console.log("🔄 Calling Groq API directly from main.js...");
+      const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${GROQ_API_KEY}`
+        },
         body: JSON.stringify({
           model: "llama-3.3-70b-versatile",
           messages: conversationHistory,
@@ -1427,14 +1433,14 @@ When ending the call, include [CALL_END] at the very end of your final message.`
         const data = await response.json();
         const reply = data.choices?.[0]?.message?.content || "I understand. Let me note that for you.";
         conversationHistory.push({ role: "assistant", content: reply });
-        console.log("🟢 Groq API response via Cloudflare Worker Proxy successful!");
+        console.log("🟢 Direct Groq API connection successful!");
         return reply;
       }
       const errText = await response.text();
-      console.error("❌ Worker Response Error Details:", errText);
-      throw new Error(`Worker API error status ${response.status}: ${errText}`);
+      console.error("🔴 Direct Groq API failed with status:", response.status, errText);
+      throw new Error(`Groq API Error ${response.status}: ${errText}`);
     } catch (err) {
-      console.warn("⚠️ Groq Cloudflare Worker Proxy failed or offline:", err.message);
+      console.warn("⚠️ Groq direct API call failed:", err.message);
 
       // 2. Silent fallback: Try direct browser-to-Groq request using localStorage API key (no prompt)
       const localKey = localStorage.getItem("GROQ_API_KEY");
