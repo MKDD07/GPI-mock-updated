@@ -1,0 +1,12 @@
+# Environment variables & secrets
+.env
+.dev.vars
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Dependencies
+node_modules/
+dist/
+.wrangler/
