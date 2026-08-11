@@ -1380,15 +1380,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     conversationHistory = [{
       role: "system",
-      content: `You are Priya, a warm and professional Choco Toffee customer support agent on a phone call.
+      content: `You are Priya, a warm and professional Choco Toffee customer support representative handling customer service calls.
 The customer reported these retailer issues: ${issueText}.
-Your job:
-1. Greet warmly and acknowledge the issue.
-2. Ask 1-2 short follow-up questions (retailer name/location, brief description).
-3. Reassure them it's escalated and will be resolved.
-4. End the call warmly.
-IMPORTANT: Keep every response SHORT (1-2 sentences max). You are speaking, not texting.
-When ending the call, include [CALL_END] at the very end of your final message.`
+Your Instructions:
+1. Speak warmly, naturally, and concisely (1-2 short conversational sentences max).
+2. If the user doesn't respond or is silent, politely repeat your last question or ask if they are still on the line.
+3. Help address their reported retailer complaint, collect details if needed, and confirm escalation.
+4. When concluding the support call, include [CALL_END] at the very end of your final response.`
     }];
 
     const initialGreeting = "Hello! I'm Priya from Choco Toffee Support. I'm sorry to hear you had trouble claiming your reward. Could you tell me the name of the retailer?";
@@ -1568,16 +1566,16 @@ When ending the call, include [CALL_END] at the very end of your final message.`
     voiceSpeechRecognition.maxAlternatives = 1;
 
     let silenceTimeout = setTimeout(() => {
-      // No speech detected after 8s — send empty signal to advance conversation
+      // No speech detected after 10s — IVR style repeat/check-in prompt
       voiceSpeechRecognition.stop();
       setVoiceStatus("speaking");
-      callGroqAPI("[customer is silent]").then(reply => {
+      callGroqAPI("[IVR SYSTEM: Customer gave no speech input for 10 seconds. In 1 short polite sentence, repeat your last question or check if they are still on the line.]").then(reply => {
         speakText(reply, () => {
           if (reply.includes("[CALL_END]")) endVoiceCall(false);
           else listenForUserSpeech();
         });
       });
-    }, 8000);
+    }, 10000);
 
     voiceSpeechRecognition.onresult = (event) => {
       clearTimeout(silenceTimeout);
